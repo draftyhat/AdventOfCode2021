@@ -1,8 +1,13 @@
+# make day 1 executable: make 1
+# make day 1 executable, part 2: make 1p2
+# make day 1 debug executable: make 1
+# make day 1 debug executable, part 2: make debug1p2
+
 CC = gcc
 _CFLAGS = $(CFLAGS) -Wall
 YEAR=2021
 
-all: 1 1p2
+all: 1
 
 debug%:
 	make CFLAGS="-DDEBUG $(CFLAGS)" $*

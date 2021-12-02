@@ -14,7 +14,10 @@ debug%:
 %p2:
 	make CFLAGS="-DPART2 $(CFLAGS)" $*
 
-$(YEAR)_%: $(YEAR)_%.c
+input/$(YEAR)_%_input:
+	curl -o $@ https://adventofcode.com/2021/day/`printf %d $*`/input
+
+$(YEAR)_%: $(YEAR)_%.c input/$(YEAR)_%_input
 	$(CC) $(DEBUG) $(_CFLAGS) -o $@ $^
 
 1 2 3 4 5 6 7 8 9: %: $(YEAR)_0%

@@ -133,24 +133,29 @@ if('__main__' == __name__):
     while(sys.stdin.readline()):
         cards.append(bingocard());
         logger.debug("card {}:\n{}".format(len(cards), cards[-1]));
+    logger.debug("---- starting play ----");
 
     # input drawn numbers to each card, check for win, get answer
+    trackedcard = cards[1];
     for drawnn in drawn:
         drawnn = int(drawnn);
-        print("--- drawing {}".format(drawnn));
+        topop = [];
         for cardindex, card in enumerate(cards):
             card.mark(drawnn);
             if(card.won()):
                 if(args.part2):
-                    cards.pop(cardindex);
                     logger.debug("Card {} won with draw {}!".format(cardindex, drawnn));
+                    logger.debug(card);
                     if(len(cards) == 1):
                         logger.debug("Last card {} won with draw {}!".format(cardindex, drawnn));
-                        logger.debug(card);
                         print(drawnn * card.sum_unmarked);
                         sys.exit(0);
+                    topop.insert(0, cardindex)
                 else:
                     logger.debug(card);
                     print(drawnn * card.sum_unmarked);
                     sys.exit(0);
+        for cardindex in topop:
+            cards.pop(cardindex);
+
 

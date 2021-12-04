@@ -14,12 +14,12 @@ class bingocard:
 
         self.win = False;
 
-        # for each column, row, and the two diagonals, the number of marked
+        # for each column, row, and NOT THE DIAGONALS, the number of marked
         # numbers
         self.columns = [0] * CARDSIZE;
         self.rows = [0] * CARDSIZE;
-        self.forward_diagonal = 0;
-        self.backslash_diagonal = 0;
+        #self.forward_diagonal = 0;
+        #self.backslash_diagonal = 0;
 
         # read 5 lines from stdin and assemble the card
         # we hold: a dictionary indexed by number and returning the position of
@@ -57,12 +57,12 @@ class bingocard:
             self._check_win(self.rows[x]);
             self.columns[y] += 1;
             self._check_win(self.columns[y]);
-            if(x == y):
-                self.forward_diagonal += 1;
-                self._check_win(self.forward_diagonal);
-            elif(x + y == CARDSIZE - 1):
-                self.backslash_diagonal += 1;
-                self._check_win(self.backslash_diagonal);
+            #if(x == y):
+            #    self.forward_diagonal += 1;
+            #    self._check_win(self.forward_diagonal);
+            #elif(x + y == CARDSIZE - 1):
+            #    self.backslash_diagonal += 1;
+            #    self._check_win(self.backslash_diagonal);
         except:
             # number was not on this board
             pass;
@@ -98,9 +98,9 @@ class bingocard:
             ' '.join(['{}'.format(x) for x in self.columns]));
         retval += '  Row mark count:    {}\n'.format(
             ' '.join(['{}'.format(x) for x in self.rows]));
-        retval += '  Forward diagonal mark count: {}   Backslash diagonal' \
-                ' mark count: {}\n'.format(
-                    self.forward_diagonal, self.backslash_diagonal);
+        #retval += '  Forward diagonal mark count: {}   Backslash diagonal' \
+        #        ' mark count: {}\n'.format(
+        #            self.forward_diagonal, self.backslash_diagonal);
         retval += '  Unmarked sum: {}>'.format(self.sum_unmarked);
         return retval;
 

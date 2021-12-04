@@ -42,9 +42,8 @@ class bingocard:
         return sum;
 
     def won(self):
-        # painstakingly match each winning row, column, and diagonal pattern to
-        # the actual card to see if we won
-        # rows
+        # painstakingly match each winning row, column, and NOT THE DIAGONALS
+        # pattern to the actual card to see if we won rows
         for rown in range(CARDSIZE):
             rowstart = 1 + rown * CARDSIZE * 3;
             for colpos in range(CARDSIZE):
@@ -68,24 +67,24 @@ class bingocard:
                 return True;
 
         # forward diagonal
-        for xy in range(CARDSIZE):
-            if(self.card[1 + xy * CARDSIZE * 3 + xy * 3] !=
-                        self.markchar):
-                    # unmarked square. Abort.
-                    break;
-        else:
-            # this diagonal won!
-            return True;
+        #for xy in range(CARDSIZE):
+        #    if(self.card[1 + xy * CARDSIZE * 3 + xy * 3] !=
+        #                self.markchar):
+        #            # unmarked square. Abort.
+        #            break;
+        #else:
+        #    # this diagonal won!
+        #    return True;
 
         # backward diagonal
-        for xy in range(CARDSIZE):
-            if(self.card[1 + xy * CARDSIZE * 3 + (CARDSIZE - xy) * 3] !=
-                        self.markchar):
-                    # unmarked square. Abort.
-                    break;
-        else:
-            # this diagonal won!
-            return True;
+        #for xy in range(CARDSIZE):
+        #    if(self.card[1 + xy * CARDSIZE * 3 + (CARDSIZE - xy) * 3] !=
+        #                self.markchar):
+        #            # unmarked square. Abort.
+        #            break;
+        #else:
+        #    # this diagonal won!
+        #    return True;
 
 
     def __repr__(self):

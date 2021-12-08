@@ -32,18 +32,19 @@ def decode_digits(samples, digits):
         elif(4 == elt):
             four == elt;
 
-    # decode the digits
     answer = 0;
+    def found(digit):
+        nonlocal answer
+        answer = 10 * answer + digit;
+
+    # decode the digits
     for elt in digits.split():
         if(2 == len(elt)):
-            # found 1
-            answer = answer * 10 + 1;
+            found(1);
         elif(3 == len(elt)):
-            # found 7
-            answer = answer * 10 + 7;
+            found(7);
         elif(4 == len(elt)):
-            # found 4
-            answer = answer * 10 + 4;
+            found(4);
         elif(5 == len(elt)):
             # found 2, 3, or 5
             # both missing segments in 2 are in 4
@@ -56,19 +57,16 @@ def decode_digits(samples, digits):
                 if(seg in elt):
                     shares_with_one += 1;
             if(0 == shares_with_one):
-                # found 3
-                answer = 10 * answer + 3;
+                found(3);
             else:
                 shares_with_four = 0;
                 for seg in four:
                     if(seg in elt):
                         shares_with_four += 1;
                 if(1 == shares_with_four):
-                    # found 5
-                    answer = 10 * answer + 5
+                    found(5);
                 else:
-                    # found 2
-                    answer = 10 * answer + 2
+                    found(2);
         elif(6 == len(elt)):
             # found 0, 6, or 9
             # missing segment in 6 is a segment in 1 or 7
@@ -87,17 +85,13 @@ def decode_digits(samples, digits):
                     if(seg in elt):
                         shares_with_four += 1;
                 if(0 == shares_with_four):
-                    # found 9
-                    answer = 10 * answer + 9;
+                    found(9);
                 else:
-                    # found 0
-                    answer *= 10;
+                    found(0);
             else:
-                # found 6
-                answer = 10 * answer + 6;
+                found(6);
         elif(7 == len(elt)):
-            # found 8
-            answer = answer * 10 + 8;
+            found(8);
 
     return answer;
 

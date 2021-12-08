@@ -4,6 +4,103 @@ import logging;
 AOC_DAY=8
 AOC_YEAR=2021
 
+'''
+7 segs  8
+6 segs  0, 6, 9
+            missing segment in 6 is a segment in 1 or 7
+            missing segment in 0 is a segment in 4 but not 1
+            missing segment in 9 is not a segment in 1,4,or 7
+5 segs  2, 3, 5
+            both missing segments in 2 are in 4
+            only one missing segment in 5 is in 4
+            both missing segments in 3 are not in 1 or 7
+4 segs  4
+3 segs  7
+2 segs  1
+'''
+
+def decode_digits(samples, digits):
+    # return 4-digit encoded number
+
+    # find 1, 4 in the samples
+    one = ''
+    four = ''
+    for elt in samples.split():
+        l = len(elt);
+        if(2 == l):
+            one = elt;
+        elif(4 == elt):
+            four == elt;
+
+    # decode the digits
+    answer = 0;
+    for elt in digits.split():
+        if(2 == len(elt)):
+            # found 1
+            answer = answer * 10 + 1;
+        elif(3 == len(elt)):
+            # found 7
+            answer = answer * 10 + 7;
+        elif(4 == len(elt)):
+            # found 4
+            answer = answer * 10 + 4;
+        elif(5 == len(elt)):
+            # found 2, 3, or 5
+            # both missing segments in 2 are in 4
+            # only one missing segment in 5 is in 4
+            # both missing segments in 3 are not in 1 or 7
+
+            # how many segments in this are also in 1?
+            shares_with_one = 0;
+            for seg in one:
+                if(seg in elt):
+                    shares_with_one += 1;
+            if(0 == shares_with_one):
+                # found 3
+                answer = 10 * answer + 3;
+            else:
+                shares_with_four = 0;
+                for seg in four:
+                    if(seg in elt):
+                        shares_with_four += 1;
+                if(1 == shares_with_four):
+                    # found 5
+                    answer = 10 * answer + 5
+                else:
+                    # found 2
+                    answer = 10 * answer + 2
+        elif(6 == len(elt)):
+            # found 0, 6, or 9
+            # missing segment in 6 is a segment in 1 or 7
+            # missing segment in 0 is a segment in 4 but not 1
+            # missing segment in 9 is not a segment in 1,4,or 7
+
+            # how many segments in this are also in 1?
+            shares_with_one = 0;
+            for seg in one:
+                if(seg in elt):
+                    shares_with_one += 1;
+            if(0 == shares_with_one):
+                # found 0 or 9
+                shares_with_four = 0;
+                for seg in four:
+                    if(seg in elt):
+                        shares_with_four += 1;
+                if(0 == shares_with_four):
+                    # found 9
+                    answer = 10 * answer + 9;
+                else:
+                    # found 0
+                    answer *= 10;
+            else:
+                # found 6
+                answer = 10 * answer + 6;
+        elif(7 == len(elt)):
+            # found 8
+            answer = answer * 10 + 8;
+
+    return answer;
+
 def tally_unique(line):
     # return how many 1s, 4s, 7s, or 8s appear in this line
     tally = 0;
@@ -37,11 +134,15 @@ if('__main__' == __name__):
         logger.setLevel(logging.DEBUG);
 
     tally = 0;
+    sum = 0;
     line = sys.stdin.readline();
     while(len(line) > 0):
+        (samples, digits) = line.split('|');
         tally += tally_unique(line.split('|')[1]);
+        sum += decode_digits(samples, digits);
         line = sys.stdin.readline();
 
-    print(tally)
+    print("Tally: {}".format(tally));
+    print("Sum: {}".format(sum));
 
 

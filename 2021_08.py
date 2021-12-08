@@ -19,7 +19,7 @@ AOC_YEAR=2021
 2 segs  1
 '''
 
-def decode_digits(samples, digits):
+def decode_digits(samples, digits, logger):
     # return 4-digit encoded number
 
     # find 1, 4 in the samples
@@ -29,8 +29,8 @@ def decode_digits(samples, digits):
         l = len(elt);
         if(2 == l):
             one = elt;
-        elif(4 == elt):
-            four == elt;
+        elif(4 == l):
+            four = elt;
 
     answer = 0;
     def found(digit):
@@ -56,21 +56,22 @@ def decode_digits(samples, digits):
             for seg in one:
                 if(seg in elt):
                     shares_with_one += 1;
-            if(0 == shares_with_one):
+            if(2 == shares_with_one):
                 found(3);
             else:
                 shares_with_four = 0;
                 for seg in four:
                     if(seg in elt):
                         shares_with_four += 1;
-                if(1 == shares_with_four):
+                logger.debug('{} shares {} segments with 4 ({})'.format(elt, shares_with_four, four));
+                if(3 == shares_with_four):
                     found(5);
                 else:
                     found(2);
         elif(6 == len(elt)):
             # found 0, 6, or 9
-            # missing segment in 6 is a segment in 1 or 7
             # missing segment in 0 is a segment in 4 but not 1
+            # missing segment in 6 is a segment in 1 or 7
             # missing segment in 9 is not a segment in 1,4,or 7
 
             # how many segments in this are also in 1?
@@ -78,21 +79,22 @@ def decode_digits(samples, digits):
             for seg in one:
                 if(seg in elt):
                     shares_with_one += 1;
-            if(0 == shares_with_one):
+            if(2 == shares_with_one):
                 # found 0 or 9
                 shares_with_four = 0;
                 for seg in four:
                     if(seg in elt):
                         shares_with_four += 1;
-                if(0 == shares_with_four):
-                    found(9);
-                else:
+                if(3 == shares_with_four):
                     found(0);
+                else:
+                    found(9);
             else:
                 found(6);
         elif(7 == len(elt)):
             found(8);
 
+    logger.debug("Returning answer {}".format(answer));
     return answer;
 
 def tally_unique(line):
@@ -133,7 +135,7 @@ if('__main__' == __name__):
     while(len(line) > 0):
         (samples, digits) = line.split('|');
         tally += tally_unique(line.split('|')[1]);
-        sum += decode_digits(samples, digits);
+        sum += decode_digits(samples, digits, logger);
         line = sys.stdin.readline();
 
     print("Tally: {}".format(tally));

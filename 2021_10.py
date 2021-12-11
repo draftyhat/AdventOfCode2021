@@ -44,11 +44,9 @@ def is_corrupted(line, logger):
         else:
             raise Exception("Unrecognized character {}!".format(ch));
 
-    print("---------- match {}".format(match));
     incomplete_score = 0;
     match.reverse();
     for ch in match:
-        print("-- ch adds {} to {}".format(ch, incomplete_score));
         incomplete_score = incomplete_score * 5 + complete_character_score[ch];
     return (0, incomplete_score);
 
@@ -91,6 +89,3 @@ if('__main__' == __name__):
     print(incomplete_score);
     print(incomplete_score[int(len(incomplete_score)/2)]);
 
-
-
-# guesses: 5849401116 (too high)

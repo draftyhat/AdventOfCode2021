@@ -14,8 +14,10 @@ debug%:
 %p2:
 	make CFLAGS="-DPART2 $(CFLAGS)" $*
 
-$(YEAR)_%: $(YEAR)_%.c
+$(YEAR)_01 $(YEAR)_02 $(YEAR)_03 $(YEAR)_04 $(YEAR)_05 $(YEAR)_06 $(YEAR)_07 $(YEAR)_08 $(YEAR)_09 $(YEAR)_10 $(YEAR)_12 $(YEAR)_13 $(YEAR)_14 $(YEAR)_15 $(YEAR)_16 $(YEAR)_17 $(YEAR)_18 $(YEAR)_19 $(YEAR)_21 $(YEAR)_22 $(YEAR)_23 $(YEAR)_24 $(YEAR)_25: %: %.c
 	$(CC) $(DEBUG) $(_CFLAGS) -o $@ $<
+$(YEAR)_11: %: %.o grid.o
+	$(CC) $(DEBUG) $(_CFLAGS) -o $@ $^
 
 test%: %
 	cat test/$(YEAR)_`printf %02d $*`_test | ./$(YEAR)_`printf %02d $*`
@@ -33,7 +35,16 @@ test10 test11 test12 test13 test14 test15 test16 test17 test18 test19: test%: $(
 test20 test21 test22 test23 test24 test25 test26 test27 test28 test29: test%: $(YEAR)_%
 test30 test31: test%: $(YEAR)_%
 
+grid.o: lib/grid.c include/grid.h
+	$(CC) -c $(_CFLAGS) -Iinclude -o $@ $<
+
+$(YEAR)_%.o: $(YEAR)_%.c
+	$(CC) -c $(_CFLAGS) -Iinclude -o $@ $<
+
+
+
 clean:
+	rm -f *.o
 	rm -f $(YEAR)_[0-3][0-9]
 	rm -f $(YEAR)_[0-3][0-9]p2
 

@@ -22,12 +22,25 @@ class cave():
         self.connected_to.append(c)
         self.connected_to.sort();
 
-    def find_next(self, path):
+    def find_next(self, path, part2 = False):
         # return a sorted list of options for the next cave to visit
         retval = [];
-        for i in self.connected_to:
-            if i.big or not i in path:
-                retval.append(i);
+        for c in self.connected_to:
+            if c.big:
+                retval.append((part2, c));
+            else:
+                # c is small
+                try:
+                    cidx = path.index(c)
+                    if part2:
+                        # check for c more than once in path
+                        if not c in path[cidx + 1:]:
+                            # can no longer visit a small cave
+                            retval.append((False, c));
+                except:
+                    # c not in path
+                    retval.append((part2, c));
+
         return retval;
 
     def __eq__(self, other):
@@ -45,14 +58,15 @@ class cave():
         return self.name;
 
 
-def count_paths(start, path, logger):
+def count_paths(start, path, logger, part2 = False):
     npaths = 0;
-    for next_path in start.find_next(path):
+    for (part2, next_path) in start.find_next(path, part2):
         if(next_path.end):
             npaths += 1;
             logger.debug("found path {}".format(path + [next_path]));
         else:
-            npaths += count_paths(next_path, path + [next_path], logger);
+            npaths += count_paths(next_path, path + [next_path], logger,
+                    part2 = part2);
 
     return npaths;
 
@@ -73,8 +87,10 @@ def read_caves():
         except:
             cave2 = cave(cave2_name);
             caves.append(cave2);
-        cave1.add_connected(cave2);
-        cave2.add_connected(cave1);
+        if not cave2.start:
+            cave1.add_connected(cave2);
+        if not cave1.start:
+            cave2.add_connected(cave1);
         if start is None and cave1.start:
             start = cave1;
         elif start is None and cave2.start:
@@ -108,6 +124,6 @@ if('__main__' == __name__):
         logger.setLevel(logging.DEBUG);
 
     start = read_caves();
-    npaths = count_paths(start, [start], logger);
+    npaths = count_paths(start, [start], logger, part2 = args.part2);
     print(npaths);
 

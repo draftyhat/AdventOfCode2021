@@ -30,11 +30,17 @@ int grid_get_right(int * value, int * newx, int * newy,
 int grid_get_left(int * value, int * newx, int * newy,
         const struct grid * g, int x, int y);
 
+void create_grid(struct grid * g, int width, int height, int default_value);
+
 int read_grid(struct grid * g);
 
 void free_grid(struct grid * g);
 
 void print_grid(const struct grid * g);
+void print_grid_section(const struct grid * g, int x0, int x1, int y0, int y1);
+
+
+unsigned long sum_grid(struct grid * g);
 
 
 #endif  /* #ifndef GRID_H */

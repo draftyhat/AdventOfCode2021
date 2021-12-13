@@ -89,6 +89,19 @@ int grid_get_left(int * value, int * newx, int * newy,
     return retval;
 }
 
+void create_grid(struct grid * g, int width, int height, int default_value)
+{
+    g->width = width;
+    g->height = height;
+    g->values = (int **) malloc(sizeof(g->values[0]) * height);
+    for(int rown=0; rown < height; rown++)
+    {
+        g->values[rown] = (int *) malloc(sizeof(g->values[0][0]) * width);
+        for(int coln = 0; coln < width; coln++)
+            g->values[rown][coln] = default_value;
+    }
+}
+
 int read_grid(struct grid * g)
 {
     char line[4096];
@@ -150,6 +163,30 @@ void print_grid(const struct grid * g)
     }
 }
 
+void print_grid_section(const struct grid * g, int x0, int x1, int y0, int y1)
+{
+    for(int y = y0; y < y1; y++)
+    {
+        for(int x = x0; x < x1; x++)
+        {
+            printf("%x", g->values[y][x]);
+        }
+        printf("\n");
+    }
+}
+
+unsigned long sum_grid(struct grid * g)
+{
+    unsigned long sum = 0;
+    for(int x = 0; x < g->width; x++)
+    {
+        for(int y = 0; y < g->height; y++)
+        {
+            sum += g->values[y][x];
+        }
+    }
+    return sum;
+}
 
 #ifdef TEST_GRID
 int main(int argc, char ** argv)

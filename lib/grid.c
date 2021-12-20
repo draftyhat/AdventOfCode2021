@@ -172,8 +172,8 @@ int extend_grid(struct grid * g, int new_width, int new_height, int x0, int y0,
         copy_height = g->height;
     for(y=0; y < copy_height; y++)
     {
-        memcpy(new_grid.values[y0 + y], g->values[y],
-                copy_width * sizeof(new_grid.values[0]));
+        memcpy(&new_grid.values[y0 + y][x0], g->values[y],
+                copy_width * sizeof(new_grid.values[0][0]));
     }
 
     /* free old grid */

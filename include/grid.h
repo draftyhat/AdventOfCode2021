@@ -32,7 +32,11 @@ int grid_get_left(int * value, int * newx, int * newy,
 
 void create_grid(struct grid * g, int width, int height, int default_value);
 
-int read_grid(struct grid * g);
+int read_grid(struct grid * g, int * translation);
+/* allocate more grid space. move current grid to x0, y0, and extend dimensions
+ * */
+int extend_grid(struct grid * g, int new_width, int new_height, int x0, int y0,
+        int default_value);
 
 void free_grid(struct grid * g);
 

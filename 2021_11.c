@@ -123,7 +123,7 @@ int main(int argc, char ** argv)
     unsigned long nflashes = 0, nflashes_this_step;
     int first_total_flash = -1;
 
-    read_grid(&g);
+    read_grid(&g, NULL);
 
     for(int step = 0; step < 100 || -1 == first_total_flash; step++)
     {

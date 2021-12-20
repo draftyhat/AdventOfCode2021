@@ -102,7 +102,7 @@ void create_grid(struct grid * g, int width, int height, int default_value)
     }
 }
 
-int read_grid(struct grid * g)
+int read_grid(struct grid * g, int *translation)
 {
     char line[4096];
     int * rows[1000];
@@ -121,10 +121,21 @@ int read_grid(struct grid * g)
         rows[rown] = (int *) malloc(sizeof(g->values[0][0]) * g->width);
         DBGPRINT_GRID("DBG grid: reading row %d: ", rown);
         /* convert characters into ints for row array */
-        for(i=0; i < g->width; i++)
+        if(translation)
         {
-            rows[rown][i] = line[i] - '0';
-            DBGPRINT_GRID("%d", rows[rown][i]);
+            for(i=0; i < g->width; i++)
+            {
+                rows[rown][i] = translation[ (int) line[i]];
+                DBGPRINT_GRID("%d", rows[rown][i]);
+            }
+        }
+        else
+        {
+            for(i=0; i < g->width; i++)
+            {
+                rows[rown][i] = line[i] - '0';
+                DBGPRINT_GRID("%d", rows[rown][i]);
+            }
         }
         DBGPRINT_GRID("\n");
 
@@ -139,6 +150,39 @@ int read_grid(struct grid * g)
     g->height = rown;
     g->values = (int **) malloc(sizeof(g->values[0]) * rown);
     memcpy(g->values, rows, sizeof(rows[0]) * g->height);
+
+    return 0;
+}
+
+int extend_grid(struct grid * g, int new_width, int new_height, int x0, int y0,
+        int default_value)
+{
+    int y, copy_width, copy_height;
+    struct grid new_grid;
+
+    /* allocate new grid */
+    create_grid(&new_grid, new_width, new_height, default_value);
+
+    /* copy data into new grid */
+    copy_width = new_width - x0;
+    if(copy_width > g->width)
+        copy_width = g->width;
+    copy_height = new_height - y0;
+    if(copy_height > g->height)
+        copy_height = g->height;
+    for(y=0; y < copy_height; y++)
+    {
+        memcpy(new_grid.values[y0 + y], g->values[y],
+                copy_width * sizeof(new_grid.values[0]));
+    }
+
+    /* free old grid */
+    free_grid(g);
+
+    /* set new values */
+    g->values = new_grid.values;
+    g->width = new_grid.width;
+    g->height = new_grid.height;
 
     return 0;
 }

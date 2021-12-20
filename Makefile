@@ -16,7 +16,7 @@ debug%:
 
 $(YEAR)_01 $(YEAR)_02 $(YEAR)_03 $(YEAR)_04 $(YEAR)_05 $(YEAR)_06 $(YEAR)_07 $(YEAR)_08 $(YEAR)_09 $(YEAR)_10 $(YEAR)_12 $(YEAR)_14 $(YEAR)_15 $(YEAR)_16 $(YEAR)_17 $(YEAR)_18 $(YEAR)_19 $(YEAR)_21 $(YEAR)_22 $(YEAR)_23 $(YEAR)_24 $(YEAR)_25: %: %.c
 	$(CC) $(DEBUG) $(_CFLAGS) -o $@ $<
-$(YEAR)_11 $(YEAR)_13: %: %.o grid.o
+$(YEAR)_11 $(YEAR)_13 $(YEAR)_20: %: %.o grid.o
 	$(CC) $(DEBUG) $(_CFLAGS) -o $@ $^
 
 test%: %

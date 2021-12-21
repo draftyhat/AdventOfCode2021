@@ -231,6 +231,18 @@ unsigned long sum_grid(struct grid * g)
     }
     return sum;
 }
+unsigned long sum_subgrid(struct grid * g, int x0, int y0, int width, int height)
+{
+    unsigned long sum = 0;
+    for(int x = x0; x < width; x++)
+    {
+        for(int y = y0; y < height; y++)
+        {
+            sum += g->values[y][x];
+        }
+    }
+    return sum;
+}
 
 #ifdef TEST_GRID
 int main(int argc, char ** argv)

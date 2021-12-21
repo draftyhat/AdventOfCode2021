@@ -45,6 +45,7 @@ void print_grid_section(const struct grid * g, int x0, int x1, int y0, int y1);
 
 
 unsigned long sum_grid(struct grid * g);
+unsigned long sum_subgrid(struct grid * g, int x, int y, int width, int height);
 
 
 #endif  /* #ifndef GRID_H */

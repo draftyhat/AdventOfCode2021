@@ -12,7 +12,7 @@
 #endif
 
 
-#define NITERATIONS 2
+#define NITERATIONS 50
 
 void enhance_image(struct grid * image, int iea[512])
 {
@@ -95,5 +95,6 @@ int main(int argc, char ** argv)
     print_grid(&image);
 
     /* count number of lit pixels */
-    printf("Found %lu lit pixels\n", sum_grid(&image));
+    printf("Found %lu lit pixels\n", sum_subgrid(&image,
+                NITERATIONS, NITERATIONS, image.width - NITERATIONS, image.height - NITERATIONS));
 }

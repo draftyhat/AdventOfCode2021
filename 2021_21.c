@@ -80,14 +80,16 @@
  * the game. That's a lot, but still trackable?
  */
 
-#define WINNINGSCORE 7
+#ifndef WINNINGSCORE
+#define WINNINGSCORE 21
+#endif
 #define MAXDIEVALUE 3
 
 int main()
 {
     int player1score, player2score, player1position, player2position;
     int position_increment, newscore;
-    int turn;
+    int turn = 1;
     int alldone = 0;
 
     /* number of universes in which a game has a particular score and position,
@@ -106,7 +108,7 @@ int main()
 #define MAXIMUM_POSITION_INCREMENT_PER_TURN (sizeof(position_increment_per_turn)/sizeof(position_increment_per_turn[0]))
 
     memset(allgames, 0, sizeof(allgames));
-    allgames[0][0][0][PLAYER1START - 1][PLAYER2START - 1] = 1;
+    allgames[turn][0][0][PLAYER1START - 1][PLAYER2START - 1] = 1;
 
     /* play out all games */
     while(!alldone)
@@ -127,8 +129,9 @@ int main()
                             player2position++)
                     {
                         /* any games at this point? */
-                        nuniverses = allgames[turn % 2][player1score][player2score][player1position][player2position];
-                        DBGPRINT("--- p1 %d at %d, p2 %d at %d: %lu universes\n", player1score, player1position, player2score, player2position, nuniverses);
+                        nuniverses = allgames[turn % 2][player1score]
+                            [player2score][player1position][player2position];
+                        //DBGPRINT("--- p1 %d at %d, p2 %d at %d: %lu universes\n", player1score, player1position, player2score, player2position, nuniverses);
                         if(0 != nuniverses)
                         {
                             /* calculate range of possible games from here */
@@ -138,7 +141,9 @@ int main()
                             {
                                 /* calculate number of new universes that will
                                  * have this score */
-                                new_nuniverses = position_increment_per_turn[position_increment] * nuniverses;
+                                new_nuniverses = (unsigned long)
+                                    position_increment_per_turn[position_increment]
+                                    * nuniverses;
                                 /* calculate new score */
                                 /* if player 1, add score to player 1, else add
                                  * to player 2 */
@@ -147,6 +152,17 @@ int main()
                                     newscore = player1score +
                                         ((player1position + position_increment) % NPOSITIONS)
                                         + 1; /* positions index 0-9, position values 1-10 */
+                                    DBGPRINT("-- player 1 %d to %d score was"
+                                            " %d, now %d, (player 2 at %d with"
+                                            " %d) adding increment[%d] = %d *"
+                                            " %lu = %lu universes\n",
+                                            player1position, (player1position +
+                                                    position_increment) % 10,
+                                            player1score, newscore,
+                                            player2position, player2score,
+                                            position_increment,
+                                            position_increment_per_turn[position_increment],
+                                            nuniverses, new_nuniverses);
                                     /* mark wins */
                                     if(newscore >= WINNINGSCORE)
                                     {
@@ -156,10 +172,10 @@ int main()
                                     {
                                         /* mark games at new score/position */
                                         allgames[(turn + 1) % 2]
-                                            [(player1position + position_increment) % NPOSITIONS]
-                                            [player2position]
                                             [newscore]
-                                            [player2score] += new_nuniverses;
+                                            [player2score]
+                                            [(player1position + position_increment) % NPOSITIONS]
+                                            [player2position] += new_nuniverses;
                                         alldone = 0;
                                     }
                                 }
@@ -169,16 +185,26 @@ int main()
                                         ((player2position + position_increment) % NPOSITIONS)
                                         + 1; /* positions index 0-9, position values 1-10 */
                                     if(newscore >= WINNINGSCORE)
+                                    {
+                                        DBGPRINT("player 2 %d -> %d wins with"
+                                                " score %d -> %d\n",
+                                                player2position,
+                                                (player2position +
+                                                 position_increment) %
+                                                NPOSITIONS, player2score,
+                                                newscore);
                                         player2wins += new_nuniverses;
+                                    }
                                     else
                                     {
                                         /* mark games at new score/position */
                                         allgames[(turn + 1) % 2]
-                                            [player1position]
-                                            [(player2position + position_increment) % NPOSITIONS]
                                             [player1score]
-                                            [newscore] += new_nuniverses;
+                                            [newscore]
+                                            [player1position]
+                                            [(player2position + position_increment) % NPOSITIONS] += new_nuniverses;
                                         alldone = 0;
+DBGPRINT("player 2 %d -> %d score %d -> %d (player 1 at %d with %d)\n", player2position, (player2position + position_increment) % NPOSITIONS, player2score, newscore, player1position, player1score);
                                     }
                                 }
 

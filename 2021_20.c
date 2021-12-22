@@ -94,7 +94,10 @@ int main(int argc, char ** argv)
     }
     print_grid(&image);
 
-    /* count number of lit pixels */
+    /* count number of lit pixels. Remove artifacts that are there because the
+     * grid isn't really infinite (note: uncalculated pixels all blink on and
+     * off, but only half a calculation is done on the outer pixels, and this
+     * propagates error inward at a rate of one pixel per iteration). */
     printf("Found %lu lit pixels\n", sum_subgrid(&image,
                 NITERATIONS, NITERATIONS, image.width - NITERATIONS, image.height - NITERATIONS));
 }

@@ -11,8 +11,10 @@ rightmostdigitre = re.compile('.*(\d+)([^\d]*)');
 leftmostdigitre = re.compile('[^\d]*(\d+)(.*)');
 
 def explode(snailfish, logger):
+    logger.debug(f'explode: {snailfish}');
     # find the leftmost depth-4 pair and explode it.
     # work with the text representation of the number (no spaces)
+    did = False
     st = str(snailfish).replace(' ','');
     depth = 0;
     last_number_index = None;
@@ -36,7 +38,13 @@ def explode(snailfish, logger):
                 if(rightmostdigit_match):
                     stfirsthalf = stfirsthalf[:rightmostdigit_match.start(1)] + \
                             str(int(match.group(1)) + int(rightmostdigit_match.group(1))) + \
-                            stfirsthalf[rightmostdigit_match.start(2)];
+                            stfirsthalf[rightmostdigit_match.start(2):];
+                    logger.debug(f"explode:  first half {stfirsthalf}");
+                    logger.debug(f"---------------");
+                    logger.debug(rightmostdigit_match.groups());
+                    logger.debug(rightmostdigit_match.start(1));
+                    logger.debug(rightmostdigit_match.start(2));
+                    logger.debug(f"---------------");
 
                 # add last in matched pair to leftmost digit following match
                 leftmostdigit_match = leftmostdigitre.match(stlasthalf);
@@ -44,33 +52,36 @@ def explode(snailfish, logger):
                     stlasthalf = stlasthalf[:leftmostdigit_match.start(1)] + \
                             str(int(match.group(2)) + int(leftmostdigit_match.group(1))) + \
                             stlasthalf[leftmostdigit_match.start(2):];
+                    logger.debug(f"explode:   last half {stlasthalf}");
 
                 # replace exploded group with 0
                 st = stfirsthalf + '0' + stlasthalf;
+                did = True;
                 break;
 
     # return in list form
-    return True, eval(st)
+    return did, eval(st)
     
 
 
 def split(snailfish, logger):
+    logger.debug(f"split: {snailfish}");
     # find any numbers 10 or greater
     if(len(snailfish) < 2):
         return False, None
     did = False;
-    if(isinstance(list, snailfish[0])):
-        did, snailfish[0] = split(snailfish);
+    if(isinstance(snailfish[0], list)):
+        did, snailfish[0] = split(snailfish[0], logger);
     else:
         if(snailfish[0] >= 10):
-            snailfish[0] = [snailfish[0]/2, (snailfish[0]+1)/2];
+            snailfish[0] = [round(snailfish[0]/2), round((snailfish[0]+1)/2)];
             did = True
     if not did:
-        if(isinstance(list, snailfish[1])):
-            did, snailfish[1] = split(snailfish);
+        if(isinstance(snailfish[1], list)):
+            did, snailfish[1] = split(snailfish[1], logger);
         else:
             if(snailfish[1] >= 10):
-                snailfish[1] = [snailfish[1]/2, (snailfish[1]+1)/2];
+                snailfish[1] = [round(snailfish[1]/2), round((snailfish[1]+1)/2)];
                 did = True
     
     return did, snailfish;
@@ -82,6 +93,7 @@ def reduce(snailfish, logger):
         did, snailfish = explode(snailfish, logger);
         if not did:
             did, snailfish = split(snailfish, logger);
+    return snailfish
 
 def magnitude(snailfish):
     lhs_mag = snailfish[0];

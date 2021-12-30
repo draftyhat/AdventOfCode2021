@@ -8,8 +8,10 @@ AOC_YEAR=2021
 
 
 pairherere = re.compile('^(\d+),(\d+)(.*)');
-rightmostdigitre = re.compile('.*(\d+)([^\d]*)');
-leftmostdigitre = re.compile('[^\d]*(\d+)(.*)');
+#rightmostdigitre = re.compile('.*(\d+)([^\d]*)');
+#leftmostdigitre = re.compile('[^\d]*(\d+)(.*)');
+rightmostdigitre = re.compile('.*?(\d+)([^\d]*)$');
+leftmostdigitre = re.compile('^[^\d]*(\d+)(.*?)');
 
 def explode(snailfish, logger):
     logger.debug(f'explode: {snailfish}');
@@ -101,6 +103,14 @@ def magnitude(snailfish):
         rhs_mag = magnitude(snailfish[1]);
     return 3*lhs_mag + 2*rhs_mag;
 
+
+#def test(logger):
+#    #input = [[[[[6,6],[6,6]],[[6,0],[6,7]]],[[[7,7],[8,9]],[8,[8,1]]]], [2, 9]]
+#    #output = reduce(input, logger = logger);
+#    input= [[[[12, 12], [6, 14]], [[15, 0], [17, [8, 1]]]], [2, 9]];
+#    print(f"input:  {input}");
+#    did,output=explode(input, logger = logger)
+#    print(f"result: {output}");
 
 def test(logger):
     nerrs = 0;

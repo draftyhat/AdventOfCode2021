@@ -23,6 +23,12 @@ positions:
      # a0 # b0 # c0 # d0 #
 
 '''
+amphipod_cost = {
+        'A': 1,
+        'B': 10,
+        'C': 100,
+        'D': 1000,
+}
 
 movement_paths = {
         ('a0','p'):['a1','a2','a3','r','q'],
@@ -145,16 +151,26 @@ movement_paths = {
         ('d3','z'):['x','y','y'],
 }
 
-def cost(start, end):
+def cost(start, end, amphipod):
     if start[0] in ['a','b','c','d']:
-        return len(movement_paths[(start, end)]) + 1;
+        return (len(movement_paths[(start, end)]) + 1) * amphipod_cost[amphipod[0]];
     else:
-        return len(movement_paths[(end, start)]) + 1;
+        return (len(movement_paths[(end, start)]) + 1) * amphipod_cost[amphipod[0]];
 
 # return None if amphipod can't move any more
-def get_all_next_moves(start, amphipod):
-    if(start[0] == amphipod[0].lower()):
-        return None;
+def get_all_next_moves(start, amphipod, board):
+    # check to see if we're moving an amphipod which is already in a final slot
+    if start[0] == amphipod[0].lower():
+        finalspot = True;
+        for i in range(0, int(start[1])):
+            checkspot = start[0] + str(i);
+            if board.get(checkspot, 'e')[0] != checkspot[0].upper():
+                # found an amphipod not in a final spot who'd be blocked in
+                finalspot = False;
+                break;
+        if finalspot:
+            return [];
+
     if start[0] in ['a','b','c','d']:
         return ['p','q','s','u','w','y','z'];
     else:
@@ -196,7 +212,6 @@ def check_done(board):
         if room[0] != amphipod[0].lower():
             return False;
 
-    print("--------------------- board done!");
     return True;
 
 
@@ -242,36 +257,68 @@ def create_start_board(test = False):
 
     return board;
 
+def board_repr(board):
+    return f"# {board.get('p', '. ')} {board.get('q', '. ')} .  " \
+            f"{board.get('s', '. ')} .  {board.get('u', '. ')} .  " \
+            f"{board.get('w', '. ')} .  {board.get('y', '. ')} " \
+            f"{board.get('z', '. ')} #\n" \
+            f"     #  {board.get('a3', '. ')} ## {board.get('b3', '. ')} ## " \
+            f"{board.get('c3', '. ')} ## {board.get('d3', '. ')} #\n" \
+            f"     #  {board.get('a2', '. ')} ## {board.get('b2', '. ')} ## " \
+            f"{board.get('c2', '. ')} ## {board.get('d2', '. ')} #\n" \
+            f"     #  {board.get('a1', '. ')} ## {board.get('b1', '. ')} ## " \
+            f"{board.get('c1', '. ')} ## {board.get('d1', '. ')} #\n" \
+            f"     #  {board.get('a0', '. ')} ## {board.get('b0', '. ')} ## " \
+            f"{board.get('c0', '. ')} ## {board.get('d0', '. ')} #\n"
+
 def find_lowest_energy(board):
     # plan: complete search of all possible moves
     # find all possible moves by all possible amphipods
     #  store "board" for each
     lowest_energy = None;
-    boardlist = [(board, 0)];
+    boardlist = [(board, 0, [])];
     nrounds = 0;
+    checked_boards = {};
     while len(boardlist) > 0:
-        board, current_cost = boardlist.pop();
+        board, current_cost, movelist = boardlist.pop();
+        if (board_repr(board), current_cost) in checked_boards:
+            # we're already checking this board
+            continue;
+
+        if(current_cost > (1000*4 + 100*4 + 10*4 + 1*4) * 22):
+            print(f"WARNING: discarding board, cost {current_cost} greater than max");
+            print(board_repr(board));
+            print(movelist);
+            continue;
+
+        checked_boards[(board_repr(board), current_cost)] = 1;
+        if lowest_energy != None and (current_cost >= lowest_energy):
+            continue;
         # generate all possible next moves on this board
+        logger.debug(board_repr(board));
         for(position, amphipod) in board.items():
-            nextmoves = get_all_next_moves(position, amphipod);
+            nextmoves = get_all_next_moves(position, amphipod, board);
+            logger.debug(f"checking {amphipod} from {position} to {nextmoves}");
             if None != nextmoves:
                 for nextmove in nextmoves:
                     if is_legal_move(position, nextmove, board):
                         nextboard = copy.deepcopy(board)
                         nextboard.pop(position);
                         nextboard[nextmove] = amphipod;
-                        nextcost = current_cost + cost(position, nextmove);
+                        nextcost = current_cost + cost(position, nextmove, amphipod);
+                        logger.debug(f"-- amphipod {amphipod} moves {position}-{nextmove}, cost now {nextcost}");
                         if check_done(nextboard):
+                            logger.debug(f"finished board! Energy {nextcost} (current min {lowest_energy})");
                             if None == lowest_energy:
                                 lowest_energy = nextcost;
                             else:
                                 lowest_energy = min(lowest_energy, nextcost);
                         else:
-                            boardlist.append((nextboard, nextcost));
+                            boardlist.append((nextboard, nextcost, movelist + [(amphipod, position, nextmove)]));
         nrounds += 1;
         if 0 == nrounds % 10000:
-            print(f"Round {nrounds}");
-            print(board);
+            print(f"Round {nrounds}, minimum cost {lowest_energy} (board cost {current_cost})");
+            print(board_repr(board));
 
     return lowest_energy;
 
@@ -299,6 +346,8 @@ if('__main__' == __name__):
     args = parser.parse_args();
     if(args.verbose):
         logger.setLevel(logging.DEBUG);
+    else:
+        logger.setLevel(logging.INFO);
 
     board = create_start_board(args.test);
     lowest_energy = find_lowest_energy(board);

@@ -1,7 +1,7 @@
 import sys;
 import logging;
 
-AOC_DAY=14
+AOC_DAY=15
 AOC_YEAR=2021
 
 class grid():

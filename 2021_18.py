@@ -91,7 +91,6 @@ def reduce(snailfish, logger):
         if not did:
             did, snailfish = split(snailfish, logger);
             logger.debug(f" split result: {snailfish}");
-        print(f"step: {snailfish}");
     return snailfish
 
 def magnitude(snailfish):
@@ -254,12 +253,27 @@ if('__main__' == __name__):
     if(args.test):
         sys.exit(test(logger));
 
-    line = sys.stdin.readline();
-    snailfish = eval(line);
-    line = sys.stdin.readline();
-    while(line):
-        logger.debug("-- adding line {}".format(line));
-        snailfish = reduce([snailfish, eval(line)], logger);
+    if(args.part2):
+        largest_magnitude = 0;
         line = sys.stdin.readline();
+        snailfish = [eval(line)];
+        line = sys.stdin.readline();
+        while(line):
+            snailfish.append(eval(line));
+            line = sys.stdin.readline();
+        for index,snailfish0 in enumerate(snailfish):
+            for snailfish1 in snailfish[index:]:
+                largest_magnitude = max(largest_magnitude, magnitude(reduce([snailfish0, snailfish1], logger)));
+                largest_magnitude = max(largest_magnitude, magnitude(reduce([snailfish1, snailfish0], logger)));
 
-    print(f'answer: {magnitude(snailfish)}')
+        print(f'largest magnitude: {largest_magnitude}')
+    else: # part 1
+        line = sys.stdin.readline();
+        snailfish = eval(line);
+        line = sys.stdin.readline();
+        while(line):
+            logger.debug("-- adding line {}".format(line));
+            snailfish = reduce([snailfish, eval(line)], logger);
+            line = sys.stdin.readline();
+
+        print(f'answer: {magnitude(snailfish)}')

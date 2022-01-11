@@ -98,17 +98,22 @@ def read_riskgrid(part2 = False):
         for y in range(height):
             for x in range(width, 5 * width):
                 grid[y].append(riskgrid_element(
-                    (int(weights[x % width][y]) + (x // width)) % 10, (x,y)))
+                    ((int(weights[y][x % width]) + (x // width) - 1) % 9) + 1, (x,y)))
         for y in range(height, height * 5):
             grid.append([]);
             for x in range(5 * width):
                 grid[y].append(riskgrid_element(
-                    (int(weights[x % width][y % height]) + (x//width) + (y//height)) % 10, (x,y)))
+                    ((int(weights[y % height][x % width]) + (x//width) + (y//height) - 1) % 9) + 1, (x,y)))
 
     return grid;
 
 def riskgrid_repr(grid):
     return '\n'.join([''.join([str(x.weight) for x in y]) for y in grid]);
+
+#g = read_riskgrid(True)
+#print(riskgrid_repr(g));
+#sys.exit(1);
+
 
 def djikstra(grid, logger):
     # priority queue

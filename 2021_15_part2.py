@@ -89,29 +89,33 @@ def test_riskgrid(logger):
 def read_riskgrid(part2 = False):
     # note: grid access is grid[y][x]
     weights = [[x for x in line.strip()] for line in sys.stdin.readlines()];
-    grid = [[riskgrid_element(weights[x][y], (x,y)) for y in range(len(weights))] for x in range(len(weights[0]))]
+    grid = [[riskgrid_element(weights[x][y], (x,y)) for x in range(len(weights[0]))] for y in range(len(weights))]
 
     if part2:
         # expand grid
         width = len(grid[0]);
         height = len(grid);
-        for y in range(height):
-            for x in range(width, 5 * width):
-                grid[y].append(riskgrid_element(
-                    ((int(weights[y][x % width]) + (x // width) - 1) % 9) + 1, (x,y)))
-        for y in range(height, height * 5):
+        for x in range(width):
+            for y in range(height, 5*height):
+                grid[x].append(riskgrid_element(
+                    ((int(weights[y % height][x]) + (y // height) - 1) % 9) + 1, (x,y)))
+        for x in range(width, width * 5):
             grid.append([]);
-            for x in range(5 * width):
-                grid[y].append(riskgrid_element(
+            for y in range(5 * height):
+                grid[x].append(riskgrid_element(
                     ((int(weights[y % height][x % width]) + (x//width) + (y//height) - 1) % 9) + 1, (x,y)))
 
     return grid;
 
 def riskgrid_repr(grid):
-    return '\n'.join([''.join([str(x.weight) for x in y]) for y in grid]);
+    return '\n'.join([''.join([str(grid[x][y].weight) for x in range(len(grid))]) for y in range(len(grid[0]))])
+
 
 #g = read_riskgrid(True)
 #print(riskgrid_repr(g));
+#for x in range(len(g)):
+#    for y in range(len(g[0])):
+#        print(f'({x},{y}) {g[x][y].weight}  ({g[x][y].x},{g[x][y].y})')
 #sys.exit(1);
 
 
@@ -133,7 +137,7 @@ def djikstra(grid, logger):
             popped.visit();
             # for each neighbor:
             neighbors = popped.get_neighbors(width, height);
-            for neighbor in [grid[neighbor[1]][neighbor[0]] for neighbor in neighbors]:
+            for neighbor in [grid[neighbor[0]][neighbor[1]] for neighbor in neighbors]:
                 # if not visited
                 if not neighbor.visited:
                     # calculate new distance, and put on heap
@@ -141,8 +145,6 @@ def djikstra(grid, logger):
                             max(neighbor.distance, popped.distance + neighbor.weight));
                     logger.debug(f"  queuing neighbor ({neighbor.x},{neighbor.y})" \
                             f" weight {neighbor.weight}  dist {neighbor.distance}");
-                    logger.debug(f"    min({popped.distance}+{neighbor.weight}," \
-                            f" max({neighbor.distance}, {popped.distance} + {neighbor.weight}))");
                     heapq.heappush(q, neighbor);
 
         # pop next least-cost element

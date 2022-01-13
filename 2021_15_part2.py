@@ -87,9 +87,8 @@ def test_riskgrid(logger):
 
 
 def read_riskgrid(part2 = False):
-    # note: grid access is grid[y][x]
     weights = [[x for x in line.strip()] for line in sys.stdin.readlines()];
-    grid = [[riskgrid_element(weights[x][y], (x,y)) for x in range(len(weights[0]))] for y in range(len(weights))]
+    grid = [[riskgrid_element(weights[x][y], (y,x)) for x in range(len(weights[0]))] for y in range(len(weights))]
 
     if part2:
         # expand grid
@@ -111,7 +110,7 @@ def riskgrid_repr(grid):
     return '\n'.join([''.join([str(grid[x][y].weight) for x in range(len(grid))]) for y in range(len(grid[0]))])
 
 
-#g = read_riskgrid(True)
+#g = read_riskgrid(False)
 #print(riskgrid_repr(g));
 #for x in range(len(g)):
 #    for y in range(len(g[0])):
@@ -141,8 +140,11 @@ def djikstra(grid, logger):
                 # if not visited
                 if not neighbor.visited:
                     # calculate new distance, and put on heap
-                    neighbor.distance = min(popped.distance + neighbor.weight,
-                            max(neighbor.distance, popped.distance + neighbor.weight));
+                    if neighbor.distance == 0:
+                        neighbor.distance = popped.distance + neighbor.weight;
+                    else:
+                        neighbor.distance = min(neighbor.distance,
+                                popped.distance + neighbor.weight);
                     logger.debug(f"  queuing neighbor ({neighbor.x},{neighbor.y})" \
                             f" weight {neighbor.weight}  dist {neighbor.distance}");
                     heapq.heappush(q, neighbor);

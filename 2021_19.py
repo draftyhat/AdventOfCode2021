@@ -62,14 +62,21 @@ def rotate(coords, rotation):
         retval[2] = 0 - retval[2];
     return retval;
 
-def inrange(beacon):
-    if(beacon[0] <= 1000 and beacon[1] <= 1000 and beacon[2] <= 1000):
-        return True;
-    return False;
+def inrange(beacon, scanners = [0,0,0]):
+    match = False;
+    for s in scanners:
+        # if it's in range of any one scanner, it's in range.
+        if(abs(beacon[0] - s[0]) <= 1000 \
+                and abs(beacon[1] - s[1]) <= 1000 \
+                and abs(beacon[2] - s[2]) <= 1000):
+            match = True;
+            break;
+    return match;
 
 class scanner():
     def __init__(self, fh, name = None, beacons = None):
         self.mapped = False;
+        self.ntries = 0;
 
         # read title line
         if name:
@@ -86,12 +93,13 @@ class scanner():
                 self.beacons.append(list(scanf_retval));
                 scanf_retval = scanf.scanf('%d,%d,%d');
 
-    def find_offset(self, beacons, logger):
+    def find_offset(self, beacons, scanners, logger):
         # find where this scanner is located relative to the given list of
         # beacons
         for selfbeacon in self.beacons:
             logger.debug(f"-- selfbeacon{selfbeacon}");
             for otherbeacon in beacons:
+                otherbeacon = list(otherbeacon);
                 logger.debug(f"-- otherbeacon{otherbeacon}");
                 match = None;
                 for rotation in ROTATIONS:
@@ -116,7 +124,11 @@ class scanner():
                         moved_checkbeacon = rotate(checkbeacon, rotation);
                         moved_checkbeacon = translate(moved_checkbeacon, translation);
                         logger.debug(f"       ---- check loop checking {checkbeacon}, rotated to {rotate(checkbeacon, rotation)}, translated to {moved_checkbeacon}");
-                        if(inrange(moved_checkbeacon)):
+                        if(inrange(moved_checkbeacon, scanners)):
+                            # coerce type
+                            if type(moved_checkbeacon) != type(beacons[0]):
+                                moved_checkbeacon = type(beacons[0])(moved_checkbeacon);
+                            # see if the calculated beacon is in the check list
                             if not moved_checkbeacon in beacons:
                                 logger.debug(f"--- found non-matching beacon {moved_checkbeacon} ({checkbeacon})")
                                 match = False;
@@ -239,7 +251,7 @@ def test(logger):
                 break;
 
     rotation, translation = rotation_translation_test_scanner2.find_offset(
-            rotation_translation_test_scanner.beacons, logger);
+            rotation_translation_test_scanner.beacons, [[0,0,0]], logger);
     expected_rotation = [-1, 2, -3];
     if(expected_rotation != rotation):
         print(f"ERROR: unexpected rotation {rotation} calcluated, expected " \
@@ -285,24 +297,36 @@ if('__main__' == __name__):
     scanners = []
     line = sys.stdin.readline();
     while(line):
-        scanners.append(scanner(sys.stdin, name = line));
+        scanners.append(scanner(sys.stdin, name = line.strip()));
         line = sys.stdin.readline();
 
     # calculate translation, translate all beacons, put locations of all
     # beacons relative to the first scanner in our dictionary of beacons
     beacons = set();
     scanner0 = scanners.pop(0);
-    print(f"adding {len(scanner0.beacons)} from {scanner0.name}");
+    scanner_location_list = [[0,0,0]];
+    print(f"adding {len(scanner0.beacons)} from {scanner0.name} ({len(scanners)} scanners)");
     for b in scanner0.beacons:
         beacons.add(tuple(b));
-    for s in scanners:
-        #(rotation, translation) = s.find_offset(beacons, logger = logger);
-        (rotation, translation) = s.find_offset(scanner0.beacons, logger = logger);
+    max_ntries = len(scanners);
+    while len(scanners) > 0:
+        s = scanners.pop(0);
+        answer = s.find_offset(scanner0.beacons,
+                scanner_location_list, logger = logger);
+        if None == answer:
+            # this scanner didn't overlap. Try later.
+            s.ntries += 1;
+            if s.ntries > max_ntries:
+                raise Exception(f"Scanner {s.name}: maxed out overlap" \
+                        f" attempts.  Scanner list: {scanner_location_list}");
+            scanners.append(s);
+            continue;
+        (rotation, translation) = answer;
         print(f"adding {len(s.beacons)} from {s.name}");
+        scanner_location_list.append(translation);
         for b in s.beacons:
             beacons.add(tuple(translate(rotate(b, rotation), translation)));
-            print(f"  adding {tuple(translate(rotate(b, rotation), translation))}");
-        break;
+            logger.debug(f"  adding {tuple(translate(rotate(b, rotation), translation))}");
 
     print(f"Found {len(beacons)} beacons");
     l = [str(x).strip('()') for x in beacons];

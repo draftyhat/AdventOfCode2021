@@ -62,6 +62,13 @@ def rotate(coords, rotation):
             retval[i] = 0 - retval[i];
     return retval;
 
+def rotate_inverse(coords, rotation):
+    # rotate 11 times
+    retval = coords;
+    for i in range(11):
+        retval = rotate(retval, rotation);
+    return retval;
+
 def inrange(beacon, scanners = None, scannerrange = 1000):
     if(None == scanners):
         scanners = [ [0] * len(beacon) ];
@@ -159,9 +166,9 @@ class scanner():
                             # leftover other beacons; verify they're all out of
                             # range of this scanner.
                             for leftover_otherbeacon in otherbeacons:
-                                moved = rotate(translate(leftover_otherbeacon,
+                                moved = rotate_inverse(translate(leftover_otherbeacon,
                                     [-x for x in translation]),
-                                    [-x for x in rotation]);
+                                    rotation);
                                 if inrange(moved, scanners, scannerrange):
                                     logger.debug(f"  leftover_otherbeacon {leftover_otherbeacon} " \
                                             f" -> {moved} is in range of scanner" \
@@ -340,6 +347,44 @@ def test(logger):
     print(f"{nerrs} errors");
     return nerrs;
 
+def test_rotation(logger):
+    nerrs = 0;
+
+    # create testcases
+    testcases3d = []
+    for r in ROTATIONS:
+        testcases3d.append(rotate([3,4,5], r));
+        testcases3d.append(rotate([-3,-2,-4], r));
+
+
+    calculated_ntimes = 0;
+    for r in ROTATIONS:
+        for testcase in testcases3d:
+            print(f"=== testing rotation {r} testcase {testcase}");
+            rotated = rotate(testcase, r);
+            ntimes = 1;
+            while testcase != rotated:
+                logger.debug(f"  testcase {testcase} rotation {r}  {ntimes:2d}: {rotated}");
+                ntimes += 1
+                rotated = rotate(rotated, r);
+            calculated_ntimes = max(calculated_ntimes, ntimes);
+    print(f" rotation test calculated ntimes: {calculated_ntimes}");
+
+    for r in ROTATIONS:
+        logger.debug(f'-- testing 3d rotation {r}');
+        for testcase in testcases3d:
+            # rotate 12 times
+            rotated = rotate(testcase, r);
+            answer = rotate_inverse(rotated, r);
+            if(answer != testcase):
+                nerrs += 1;
+                logger.debug(f"---- rotation failed, testcase {testcase}, answer {answer}");
+
+    print(f"rotation test: {nerrs} errors");
+    return nerrs;
+
+
+
 def test2d(logger):
     nerrs = 0;
 
@@ -390,6 +435,7 @@ if('__main__' == __name__):
     if(args.test):
         nerrs = test(logger);
         nerrs += test2d(logger);
+        nerrs += test_rotation(logger);
         sys.exit(nerrs);
 
     # read scanners/beacons

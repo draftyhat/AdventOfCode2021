@@ -77,11 +77,20 @@ def inrange(beacon, scanners = None, scannerrange = 1000):
             break;
     return retval;
 
-def negate(coords):
+def negate_translation(coords):
+    # The negation of a 2d rotation is the 2d rotation
+    # 3d rotations are more complicated
     retval = [0] * len(coords);
     for i in range(len(coords)):
         retval[i] = 0 - coords[i];
     return retval;
+
+def negate_rotation(rotation):
+    retval = [0] * len(rotation);
+    for i in range(len(rotation)):
+        retval[i] = 0 - i - rotation[i];
+    return retval;
+
 
 
 class scanner():
@@ -133,11 +142,12 @@ class scanner():
                     otherbeacons = copy.deepcopy(beacons);
                     otherbeacons.remove(otherbeacon_original);
                     for checkbeacon in self.beacons:
+                        logger.debug(f"  checkbeacon {checkbeacon}");
                         if(checkbeacon == selfbeacon):
                             continue;
                         moved_checkbeacon = rotate(checkbeacon, rotation);
                         moved_checkbeacon = translate(moved_checkbeacon, translation);
-                        logger.debug(f"       ---- check loop checking {checkbeacon}, rotated to {rotate(checkbeacon, rotation)}, translated to {moved_checkbeacon}");
+                        logger.debug(f"       check loop checking {checkbeacon}, rotated {rotation} to {rotate(checkbeacon, rotation)}, translated {translation} to {moved_checkbeacon}");
                         if moved_checkbeacon == [534,-1912,768]:
                             logger.debug('  !!!!!!!!!!!!!!!!!!!!!!!!\n  check beacon ' + '\n  check beacon'.join([str(b) for b in otherbeacons]));
                         if(inrange(moved_checkbeacon, scanners, scannerrange)):
@@ -146,7 +156,7 @@ class scanner():
                                 moved_checkbeacon = type(otherbeacon_original)(moved_checkbeacon);
                             # see if the calculated beacon is in the check list
                             if not moved_checkbeacon in otherbeacons:
-                                logger.debug(f"--- found non-matching beacon {moved_checkbeacon} ({checkbeacon})")
+                                logger.debug(f"    found non-matching beacon {moved_checkbeacon} ({checkbeacon})")
                                 match = False;
                                 break;
                             # found beacon
@@ -154,28 +164,29 @@ class scanner():
                             match = True;
                         else:
                             logger.debug(f"moved beacon {checkbeacon}->{moved_checkbeacon} out of range");
-                        if(match):
-                            # apply the last translation and rotation to
-                            # leftover other beacons; verify they're all out of
-                            # range of this scanner.
-                            for leftover_otherbeacon in otherbeacons:
-                                moved = rotate(translate(leftover_otherbeacon,
-                                    [-x for x in translation]),
-                                    [-x for x in rotation]);
-                                if inrange(moved, scanners, scannerrange):
-                                    logger.debug(f"  leftover_otherbeacon {leftover_otherbeacon} " \
-                                            f" -> {moved} is in range of scanner" \
-                                            f" but not found in list. Failing"
-                                            f" this match.");
-                                    match = False;
-                                    break;
+                    if(match):
+                        logger.debug(f"Checking leftover otherbeacons {otherbeacons}");
+                        # apply the last translation and rotation to
+                        # leftover other beacons; verify they're all out of
+                        # range of this scanner.
+                        scanner_location = negate_translation(translation);
+                        for leftover_otherbeacon in otherbeacons:
+                            moved = rotate(translate(leftover_otherbeacon,
+                                negate_translation(translation)),
+                                negate_rotation(rotation));
+                            if inrange(moved, [scanner_location], scannerrange):
+                                logger.debug(f"  leftover_otherbeacon {leftover_otherbeacon} " \
+                                        f" -> {moved} is in range of scanner {scanner_location}" \
+                                        f" but not found in list. Failing"
+                                        f" this match.");
+                                match = False;
+                                break;
+                            else:
+                                logger.debug(f"  leftover_otherbeacon {leftover_otherbeacon} " \
+                                        f" -> {moved} is OUT of range of scanner {scanner_location}");
 
-                        logger.debug(f"    end loop, match {match}");
-                        if(match):
-                            return(rotation, translation);
-                    logger.debug(f"    end rotation loop");
-                logger.debug(f"    end otherbeacon loop");
-            logger.debug(f"    end selfbeacon loop");
+                    if(match):
+                        return(rotation, translation);
         # no match found
         return None;
 
@@ -203,11 +214,12 @@ def coalesce_beacons(scanners, scannerrange = 1000):
             scanners.append(s);
             continue;
         (rotation, translation) = answer;
-        logger.debug(f"adding {len(s.beacons)} from {s.name}");
-        scanner_location_list.append(negate(translation));
+        logger.debug(f"adding {len(s.beacons)} from {s.name} at {negate_translation(translation)}," \
+                f" rotation {rotation} translation {translation}");
+        scanner_location_list.append(negate_translation(translation));
         for b in s.beacons:
             beacons.add(tuple(translate(rotate(b, rotation), translation)));
-            logger.debug(f"  adding {tuple(translate(rotate(b, rotation), translation))}");
+            logger.debug(f"  adding {b} at {tuple(translate(rotate(b, rotation), translation))}");
     return beacons;
 
 
@@ -346,11 +358,14 @@ def test2d(logger):
     scanners = [
         scanner(None, name = 's0', beacons = [ [-1,3],[-3,1],[-6,6] ],
             rotations = ROTATIONS_2D),
+            # location (0,0)
         scanner(None, name = 's1', beacons = [ [-9,7],[-7,9],[1,1]],
             rotations = ROTATIONS_2D),
+            # correct rotation (-1,-2) translation (20,-20) location (-20,20)
         scanner(None, name = 's2',
             beacons = [ [7,9],[9,7],[4,4],[-3,-1],[-1,-3] ],
             rotations = ROTATIONS_2D),
+            # correct rotation (1,-2) translation (10,-10) location (-10,10)
     ];
 
     beacons = coalesce_beacons(scanners, scannerrange = 10);

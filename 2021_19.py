@@ -18,28 +18,28 @@ import copy;
        scanner0 given the indicated translation/rotation. Verify that this
        point is either in scanner0's list or out of range of scanner0.
     24 rotations to consider. Map x,y,z to:
-      x, y, z   y, x, z   z, y, x   y, z, x
-     -x, y, z  -y, x, z  -z, y, x  -y, z, x
-      x,-y, z   y,-x, z   z,-y, x   y,-z, x
-      x, y,-z   y, x,-z   z, y,-x   y, z,-x
-     -x,-y, z  -y,-x, z  -z,-y, x  -y,-z, x
-     -x, y,-z  -y, x,-z  -z, y,-x  -y, z,-x
-      x,-y,-z   y,-x,-z   z,-y,-x   y,-z,-x
-     -x,-y,-z  -y,-x,-z  -z,-y,-x  -y,-z,-x
+      x, y, z  x, z, y   y, x, z  y, z, x   z, y, x   y, z, x
+     -x, y, z -x, z, y  -y, x, z -y, z, x  -z, y, x  -y, z, x
+      x,-y, z  x,-z, y   y,-x, z  y,-z, x   z,-y, x   y,-z, x
+      x, y,-z  x, z,-y   y, x,-z  y, z,-x   z, y,-x   y, z,-x
+     -x,-y, z -x,-z, y  -y,-x, z -y,-z, x  -z,-y, x  -y,-z, x
+     -x, y,-z -x, z,-y  -y, x,-z -y, z,-x  -z, y,-x  -y, z,-x
+      x,-y,-z  x,-z,-y   y,-x,-z  y,-z,-x   z,-y,-x   y,-z,-x
+     -x,-y,-z -x,-z,-y  -y,-x,-z -y,-z,-x  -z,-y,-x  -y,-z,-x
 '''
 
 AOC_DAY=19
 AOC_YEAR=2021
 
 ROTATIONS=[
-   [  1, 2, 3 ],[  2, 1, 3 ],[  3, 2, 1 ],[  2, 3, 1 ],
-   [ -1, 2, 3 ],[ -2, 1, 3 ],[ -3, 2, 1 ],[ -2, 3, 1 ],
-   [  1,-2, 3 ],[  2,-1, 3 ],[  3,-2, 1 ],[  2,-3, 1 ],
-   [  1, 2,-3 ],[  2, 1,-3 ],[  3, 2,-1 ],[  2, 3,-1 ],
-   [ -1,-2, 3 ],[ -2,-1, 3 ],[ -3,-2, 1 ],[ -2,-3, 1 ],
-   [ -1, 2,-3 ],[ -2, 1,-3 ],[ -3, 2,-1 ],[ -2, 3,-1 ],
-   [  1,-2,-3 ],[  2,-1,-3 ],[  3,-2,-1 ],[  2,-3,-1 ],
-   [ -1,-2,-3 ],[ -2,-1,-3 ],[ -3,-2,-1 ],[ -2,-3,-1 ],
+   [ 1, 2, 3],[ 1, 3, 2],[ 2, 1, 3],[ 2, 3, 1],[ 3, 2, 1],[ 2, 3, 1],
+   [-1, 2, 3],[-1, 3, 2],[-2, 1, 3],[-2, 3, 1],[-3, 2, 1],[-2, 3, 1],
+   [ 1,-2, 3],[ 1,-3, 2],[ 2,-1, 3],[ 2,-3, 1],[ 3,-2, 1],[ 2,-3, 1],
+   [ 1, 2,-3],[ 1, 3,-2],[ 2, 1,-3],[ 2, 3,-1],[ 3, 2,-1],[ 2, 3,-1],
+   [-1,-2, 3],[-1,-3, 2],[-2,-1, 3],[-2,-3, 1],[-3,-2, 1],[-2,-3, 1],
+   [-1, 2,-3],[-1, 3,-2],[-2, 1,-3],[-2, 3,-1],[-3, 2,-1],[-2, 3,-1],
+   [ 1,-2,-3],[ 1,-3,-2],[ 2,-1,-3],[ 2,-3,-1],[ 3,-2,-1],[ 2,-3,-1],
+   [-1,-2,-3],[-1,-3,-2],[-2,-1,-3],[-2,-3,-1],[-3,-2,-1],[-2,-3,-1],
 ]
 ROTATIONS_2D=[
         [  1, 2], [ 2, 1],
@@ -169,7 +169,7 @@ class scanner():
                                 moved = rotate_inverse(translate(leftover_otherbeacon,
                                     [-x for x in translation]),
                                     rotation);
-                                if inrange(moved, scanners, scannerrange):
+                                if inrange(moved, [[0,0,0]], scannerrange):
                                     logger.debug(f"  leftover_otherbeacon {leftover_otherbeacon} " \
                                             f" -> {moved} is in range of scanner" \
                                             f" but not found in list. Failing"
@@ -199,12 +199,15 @@ def coalesce_beacons(scanners, scannerrange = 1000):
     while len(scanners) > 0:
         s = scanners.pop(0);
         logger.debug(f"=========== checking scanner {s.name}");
+        beacon_list_for_print = [b for b in beacons]
+        beacon_list_for_print.sort(key=lambda x: x[0]);
+        logger.debug(f"====== current beacon list: \n===== " + "\n===== ".join([ str(b) for b in beacon_list_for_print]));
         answer = s.find_offset(beacons,
                 scanner_location_list, logger = logger, scannerrange = scannerrange);
         if None == answer:
             # this scanner didn't overlap. Try later.
             s.ntries += 1;
-            if s.ntries > max_ntries:
+            if s.ntries > max_ntries or len(scanners) == 0:
                 raise Exception(f"Scanner {s.name}: maxed out overlap" \
                         f" attempts.  Scanner list: {scanner_location_list}");
             scanners.append(s);

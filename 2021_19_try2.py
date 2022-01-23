@@ -161,16 +161,20 @@ class scanner():
                 self.beacon_distances[distance_squared(beacon, b)] = (beacon, b);
             self.beacons.append(beacon);
 
-    def find_overlap(self, other):
+    def find_overlap(self, other, logger):
+        logger.debug(f"Finding overlap between {self.name} and {other.name}");
+        logger.debug(f"  self.distances : " + ",".join([str(x) for x in self.beacon_distances.keys()]));
+        logger.debug(f"  other.distances: " + ",".join([str(x) for x in other.beacon_distances.keys()]));
         for distance in self.beacon_distances:
             if distance in other.beacon_distances:
+                logger.debug(f"    found matching distance {distance}");
                 return get_scanner_location(
                         other.beacon_distances[distance],
                         self.beacon_distances[distance],
                         self.rotations);
 
 
-def coalesce_beacons(scanners, scannerrange = 1000):
+def coalesce_beacons(scanners, logger, scannerrange = 1000):
     # calculate translation, translate all beacons, put locations of all
     # beacons relative to the first scanner in our dictionary of beacons
     scanner0 = scanners.pop(0);
@@ -188,7 +192,7 @@ def coalesce_beacons(scanners, scannerrange = 1000):
 
         s = scanners.pop(0);
         logger.debug(f"=========== checking scanner {s.name}");
-        answer = s.find_overlap(scanner0);
+        answer = s.find_overlap(scanner0, logger);
         if answer is not None:
             rotation, translation = answer
             scanner_location_list.append(negate(translation));
@@ -313,9 +317,37 @@ def test(logger):
             else:
                 logger.debug(f"     :(   not the correct mapping: got {mapped_b} wanted {b}");
                 break;
+        if list(translation) == calc_translation:
+            logger.debug("-------- done with correct translation!");
 
-    answer = rotation_translation_test_scanner2.find_offset(
-            rotation_translation_test_scanner.beacons, [[0,0,0]], logger);
+    # test known pair
+    logger.debug(f"#### known pair test");
+    answer = get_scanner_location(
+            (rotation_translation_test_scanner.beacons[0],
+             rotation_translation_test_scanner.beacons[1]),
+            (rotation_translation_test_scanner2.beacons[0],
+             rotation_translation_test_scanner2.beacons[1]),
+            ROTATIONS);
+    if answer is None:
+        print(f"ERROR: didn't find scanner0/scanner1 first pair rotation/translation");
+        nerrs += 1;
+    else:
+        rotation, translation = answer
+        expected_rotation = [-1, 2, -3];
+        if(expected_rotation != rotation):
+            print(f"ERROR: unexpected rotation {rotation} calcluated from" \
+                    f" scanner0/1 first pair. Expected {expected_rotation}");
+            nerrs += 1;
+        expected_translation = (-68,1246,43);
+        if(expected_translation != tuple(translation)):
+            print(f"ERROR: unexpected translation {translation} calcluated,"
+                    f" expected {expected_translation}");
+            nerrs += 1;
+
+    sys.exit(nerrs);
+
+    answer = rotation_translation_test_scanner2.find_overlap(
+            rotation_translation_test_scanner, logger);
     if answer is None:
         print(f"ERROR: didn't find scanner2 rotation/translation");
         nerrs += 1;
@@ -386,7 +418,7 @@ def test2d(logger):
             rotations = ROTATIONS_2D),
     ];
 
-    beacons = coalesce_beacons(scanners, scannerrange = 10);
+    beacons = coalesce_beacons(scanners, scannerrange = 10, logger = logger);
     if len(beacons) != 6:
         print(f"ERROR: expected 6 beacons, found {len(beacons)}");
         nerrs += 1;
@@ -422,8 +454,8 @@ if('__main__' == __name__):
 
     if(args.test):
         nerrs = test(logger);
-        nerrs += test2d(logger);
-        nerrs += test_rotation(logger);
+        #nerrs += test2d(logger);
+        #nerrs += test_rotation(logger);
         sys.exit(nerrs);
 
     # read scanners/beacons
@@ -433,7 +465,7 @@ if('__main__' == __name__):
         scanners.append(scanner(sys.stdin, name = line.strip()));
         line = sys.stdin.readline();
 
-    beacons = coalesce_beacons(scanners);
+    beacons = coalesce_beacons(scanners, logger = logger);
     print(f"Found {len(beacons)} beacons");
     l = [str(x).strip('()') for x in beacons];
     l.sort();

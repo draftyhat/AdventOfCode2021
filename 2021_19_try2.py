@@ -32,6 +32,11 @@ from Reddit, calculate the distances between the beacons. This should map
 beacon pairs to known beacon pairs. Find rotation, translation from this.
 thanks to Praful for posting commented code!
 https://github.com/Praful/advent_of_code/blob/main/2021/src/day19.jl
+answers
+ scanner 1 at [68, -1246, -43]  r=[-1, 2, -3]  t=[-68, 1246, 43]i
+ scanner 4 at [-20, -1133, 1061]  r=[-2,-3,1]  t=[20,1133,-1061]
+ scanner 2 at [1105,-1205,1229]
+ scanner 3 at [-92,-2380,-20]
 '''
 
 AOC_DAY=19
@@ -116,17 +121,19 @@ def get_scanner_locations(pair0, pair1, rotations):
     for rotation in rotations:
         rotated_s1b0 = rotate(s1b0, rotation);
         rotated_s1b1 = rotate(s1b1, rotation);
-        logger.debug(f"                            rotation {rotation}");
-        logger.debug(f"                              rotated pair1 ({rotated_s1b0},{rotated_s1b1})");
+        #logger.debug(f"                            rotation {rotation}");
+        #logger.debug(f"                              rotated pair1 ({rotated_s1b0},{rotated_s1b1})");
 
         translation = [rotated_s1b0[i] - s0b0[i] for i in range(len(s0b0))];
-        logger.debug(f"                              translation0 ({translation}) gives {translate(rotated_s1b1, translation)} to match {s0b1}");
+        #logger.debug(f"                              translation0 ({translation}) gives {translate(rotated_s1b1, translation)} to match {s0b1}");
         if translate(rotated_s1b1, translation) == list(s0b1):
             retval.append((rotation, translation));
 
         translation = [rotated_s1b1[i] - s0b0[i] for i in range(len(s0b0))];
-        logger.debug(f"                              translation1 ({translation}) gives {translate(rotated_s1b0, translation)} to match {s0b1}");
+        #logger.debug(f"                              translation1 ({translation}) gives {translate(rotated_s1b0, translation)} to match {s0b1}");
         if translate(rotated_s1b0, translation) == list(s0b1):
+            logger.debug(f"   found matching rotation {rotation} translation "\
+                    f" {translation}");
             retval.append((rotation, translation));
     return retval;
 
@@ -176,9 +183,12 @@ class scanner():
         # check all beacons in the other scanner. If they either
         # rotate/translate to here, or are out of range, we're good.
         found = 0;
+        logger.debug(f"... checking {other.name} location "\
+                f"{translate(rotate([0,0,0], rotation),translation)}" \
+                f" r{rotation} t{translation}");
         for b in other.beacons:
             moved = translate(rotate(b, rotation), translation);
-            logger.debug(f"... {moved}");
+            logger.debug(f"... {b} -> {moved}");
             # if the translated beacon is either in our list of beacons, or out
             # of range of all our scanners, it's fine
             # so we check the converse: is the beacon not in our list of
@@ -191,22 +201,27 @@ class scanner():
                 # not in self.beacons; verify this beacon is out of range
                 isinrange = False
                 if inrange(moved, self.scanner_locations):
-                    logger.debug(f"  {other.name} beacon {b} r{rotation} t{translation} -> {moved} not in {self.name} but in range of {self.scanner_locations}");
+                    logger.debug(f"....  {other.name} beacon {b} r{rotation} t{translation} -> {moved} not in {self.name} but in range of {self.scanner_locations}");
                     return False;
                 else:
-                    logger.debug(f"  {moved} out of range");
+                    logger.debug(f"....  {moved} out of range");
         logger.debug(f"  {other.name} r{rotation} t{translation} verified {found} matches!");
         # we know 2 will match, that's how we derived this
         # rotation/translation. We need at least one more beacon to match up.
+        if found > 2:
+            logger.debug(f"   verified matching rotation {rotation}" \
+                    f" translation {translation}");
         return found > 2;
 
     def find_overlap(self, other, logger):
         logger.debug(f"Finding overlap between {self.name} and {other.name}");
-        logger.debug(f"  self.distances : " + ",".join([str(x) for x in self.beacon_distances.keys()]));
-        logger.debug(f"  other.distances: " + ",".join([str(x) for x in other.beacon_distances.keys()]));
+        #logger.debug(f"  self.distances : " + ",".join([str(x) for x in self.beacon_distances.keys()]));
+        #logger.debug(f"  other.distances: " + ",".join([str(x) for x in other.beacon_distances.keys()]));
         for distance in self.beacon_distances:
             if distance in other.beacon_distances:
-                logger.debug(f"    found matching distance {distance}");
+                logger.debug(f"    found matching distance {distance} between"\
+                        f" {self.beacon_distances[distance]}" \
+                        f" and {other.beacon_distances[distance]}");
                 possible_locations = get_scanner_locations(
                         self.beacon_distances[distance],
                         other.beacon_distances[distance],
@@ -239,10 +254,14 @@ def coalesce_beacons(scanners, logger, scannerrange = 1000):
         answer = scanner0.find_overlap(s, logger);
         if answer is not None:
             rotation, translation = answer
-            scanner0.add_scanner_location(translate(rotate([0,0,0], rotation), translation));
+            new_scanner_location = translate(rotate([0,0,0], rotation),
+                    translation);
+            scanner0.add_scanner_location(new_scanner_location);
             for b in s.beacons:
-                scanner0.add_beacon(translate(rotate(b, rotation), translation));
-            logger.debug(f"adding {len(s.beacons)} from {s.name}");
+                scanner0.add_beacon(translate(rotate(b, rotation),
+                    translation));
+            logger.debug(f"adding {len(s.beacons)} from {s.name} at" \
+                    f" {new_scanner_location}");
         else:
             # could not find location of this scanner. Try again later.
             s.ntries += 1;

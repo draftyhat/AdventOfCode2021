@@ -125,16 +125,17 @@ def get_scanner_locations(pair0, pair1, rotations):
         #logger.debug(f"                              rotated pair1 ({rotated_s1b0},{rotated_s1b1})");
 
         translation = [rotated_s1b0[i] - s0b0[i] for i in range(len(s0b0))];
-        #logger.debug(f"                              translation0 ({translation}) gives {translate(rotated_s1b1, translation)} to match {s0b1}");
+        logger.debug(f"                              translation0 ({translation}) gives {translate(rotated_s1b1, translation)} to match {s0b1}");
         if translate(rotated_s1b1, translation) == list(s0b1):
             retval.append((rotation, translation));
 
         translation = [rotated_s1b1[i] - s0b0[i] for i in range(len(s0b0))];
-        #logger.debug(f"                              translation1 ({translation}) gives {translate(rotated_s1b0, translation)} to match {s0b1}");
+        logger.debug(f"                              translation1 ({translation}) gives {translate(rotated_s1b0, translation)} to match {s0b1}");
         if translate(rotated_s1b0, translation) == list(s0b1):
             logger.debug(f"   found matching rotation {rotation} translation "\
                     f" {translation}");
             retval.append((rotation, translation));
+    logger.debug(f"    returning {retval}");
     return retval;
 
 
@@ -158,12 +159,12 @@ class scanner():
         self.beacons = [];
         if beacons:
             for b in beacons:
-                self.add_beacon(tuple(b));
+                self.add_beacon(b);
         else:
             self.beacons = [];
             scanf_retval = scanf.scanf('%d,%d,%d');
             while(scanf_retval):
-                self.add_beacon(tuple(scanf_retval));
+                self.add_beacon(scanf_retval);
                 scanf_retval = scanf.scanf('%d,%d,%d');
         if len(self.beacons) > 0:
             self.scanner_locations.append([0] * len(self.beacons[0]));
@@ -174,6 +175,7 @@ class scanner():
         self.scanner_locations.append(location);
 
     def add_beacon(self, beacon):
+        beacon = tuple(beacon);
         if not beacon in self.beacons:
             for b in self.beacons:
                 self.beacon_distances[distance_squared(beacon, b)] = (beacon, b);
@@ -187,14 +189,14 @@ class scanner():
                 f"{translate(rotate([0,0,0], rotation),translation)}" \
                 f" r{rotation} t{translation}");
         for b in other.beacons:
-            moved = translate(rotate(b, rotation), translation);
+            moved = tuple(translate(rotate(b, rotation), translation));
             logger.debug(f"... {b} -> {moved}");
             # if the translated beacon is either in our list of beacons, or out
             # of range of all our scanners, it's fine
             # so we check the converse: is the beacon not in our list of
             # beacons? is it in range of any of our scanners? If so, problem!
-            if tuple(moved) in self.beacons:
-                print(f"Found {b} -> {moved}");
+            if moved in self.beacons:
+                logger.debug(f"Found {b} -> {moved}");
                 found += 1;
             else:
                 logger.debug(f".... {moved} not in self.beacons");
@@ -227,7 +229,6 @@ class scanner():
                         other.beacon_distances[distance],
                         self.rotations);
                 for rotation,translation in possible_locations:
-                    print(f"---------- checking r{rotation} t{translation}");
                     # rotate/translate other beacons, check for match
                     if self.check_rotation_translation(other, rotation,
                             translation, logger): return (rotation,
@@ -251,6 +252,7 @@ def coalesce_beacons(scanners, logger, scannerrange = 1000):
 
         s = scanners.pop(0);
         logger.debug(f"=========== checking scanner {s.name}");
+        logger.debug(f"     " + "\n     ".join([str(b) for b in scanner0.beacons]));
         answer = scanner0.find_overlap(s, logger);
         if answer is not None:
             rotation, translation = answer
@@ -436,6 +438,10 @@ def test(logger):
         print(f"----- r{tr} t{tt}");
         for b in rotation_translation_test_scanner2.beacons:
             print(f"{b} -> {translate(rotate(b, tr), tt)}");
+    '''
+
+    '''
+    found matching distance 25910 between ((2059, 636, 411), (1969, 749, 482)) and ((450, -373, -389), (563, -302, -299))     
     '''
 
     return nerrs;

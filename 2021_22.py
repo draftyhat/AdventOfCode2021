@@ -60,7 +60,8 @@ class region():
                 and (other.z1 <= self.z1));
 
     def get_intersections(self, other):
-        retval = [];
+        self_retval = [];
+        other_retval = [];
         self.logger.debug("get_intersections({}, {})".format(
             str(self), str(other)));
         # assume this region intersects with the other
@@ -83,28 +84,224 @@ class region():
                                 r = region(x0 = xs[xindex - 1], x1 = xs[xindex],
                                         y0 = ys[yindex - 1], y1 = ys[yindex],
                                         z0 = zs[zindex - 1], z1 = zs[zindex]);
+                                logger.debug(f"   get_intersections processing {r}");
                                 if(self.contains(r)):
-                                    if(self.on):
-                                        r.on = self.on;
-                                        retval.append(r);
+                                    # note that we return the yet-unintersected
+                                    # parts of off regions too, so they can
+                                    # continue to be processed (in case they
+                                    # intersect other regions).
+                                    r.on = self.on;
+                                    self_retval.append(r);
                                 elif (other.contains(r)):
+                                    logger.debug(f"    {r} in other");
                                     if(other.on):
                                         r.on = other.on;
-                                        retval.append(r);
+                                        other_retval.append(r);
                                 # otherwise this region is not in either self
                                 # or other; leave it.
-        return retval;
+        logger.debug(f"get_intersections return self {'|'.join([str(x) for x in self_retval])}");
+        logger.debug(f"get_intersections return other {'|'.join([str(x) for x in other_retval])}");
+        return self_retval, other_retval;
 
     def size(self):
+        if not self.on:
+            return 0;
         print("{}-{} x {}-{} x {}-{} = {} * {} * {} = {}".format(self.x0, self.x1, self.y0, self.y1, self.z0, self.z1, self.x1 - self.x0,self.y1 - self.y0, self.z1 - self.z0, (self.x1 - self.x0) * (self.y1 - self.y0) * (self.z1 - self.z0)));
         return (self.x1 - self.x0) * (self.y1 - self.y0) * (self.z1 - self.z0);
+
+    def get_cubes(self):
+        retval = [];
+        if not self.on:
+            for x in range(self.x0, self.x1):
+                for y in range(self.y0, self.y1):
+                    for z in range(self.z0, self.z1):
+                        retval.append((x,y,z));
+        return retval;
     
     def __repr__(self):
-        retval = 'on  ' if self.on else 'off ';
-        retval += f'x = {self.x0}..{self.x1}' \
-                f',y = {self.y0}..{self.y1}' \
-                f',z = {self.z0}..{self.z1}';
+        retval = 'on ' if self.on else 'off ';
+        retval += f'x = {self.x0}..{self.x1 - 1}' \
+                f',y = {self.y0}..{self.y1 - 1}' \
+                f',z = {self.z0}..{self.z1 - 1}';
         return retval;
+
+def get_n_cubes(lines, logger):
+    print("lines:")
+    print(lines);
+    regionlist = [region(lines[0])];
+    for line in lines[1:]:
+        # read new region
+        read_region = region(line = line);
+        newregions = [read_region];
+        logger.debug("adding new region {}".format(read_region));
+
+        # compute intersection with all other regions and add to list
+        #  regionlist holds the existing list of regions
+        #  newregions will hold the regions being added (the new one gets split
+        #  as we go)
+        #  new_regionlist will hold the result after adding newregions
+
+        new_regionlist = [];
+        new_newregions = [];
+        for r in regionlist:
+            logger.debug(f"-- intersecting new {'|'.join([str(n) for n in newregions])} with region {r}");
+            intersected = False;
+            new_newregions = [];
+            while len(newregions) > 0:
+                newr = newregions.pop();
+                logger.debug("    adding new {}".format(newr));
+                if(newr.intersects(r)):
+                    newsplit, rsplit = newr.get_intersections(r);
+                    intersected = True;
+                    new_newregions.extend(newsplit);
+                    new_regionlist.extend(rsplit);
+                else:
+                    new_newregions.append(newr);
+
+            newregions = new_newregions;
+            if not intersected:
+                new_regionlist.append(r);
+
+        regionlist = new_regionlist;
+        regionlist.extend(newregions);
+        logger.debug("-- current region list {}".format(
+            '\n'.join([str(r) for r in regionlist])));
+        for r in regionlist:
+            logger.debug(f'*** {r}\n  ' + '\n  '.join([str(c) for c in r.get_cubes()]));
+
+        line = sys.stdin.readline();
+
+    logger.debug("final region list\n  {}".format('\n  '.join([str(r) for r in regionlist])));
+    turned_on = 0;
+    cubes = [];
+    for r in regionlist:
+        turned_on += r.size();
+        cubes.extend(r.get_cubes());
+
+    print("{} cubes turned on.".format(turned_on));
+    print(f"{len(cubes)} distinct cubes");
+    cubes.sort(key=lambda x:x[0] * 10000 + x[1] * 100 + x[2]);
+    print('\n'.join([str(x) for x in cubes]));
+
+    return turned_on;
+
+
+def test(logger):
+    nerrs = 0;
+
+    # unit test contains()
+    contains_testcases = [
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..2,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=1..2,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=1..1,z=1..2',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=0..1,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=0..1,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=1..1,z=0..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=0..2,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=0..2,z=1..1',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=1..1,z=0..2',
+             'on x=1..1,y=1..1,z=1..1', True),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=0..1,y=1..1,z=1..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=0..1,z=1..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=0..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..2,y=1..1,z=1..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=1..2,z=1..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=1..2', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=0..2,y=1..1,z=1..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=0..2,z=1..1', False),
+            ('on x=1..1,y=1..1,z=1..1',
+             'on x=1..1,y=1..1,z=0..2', False),
+    ];
+    for container_line, newregion_line, contains in contains_testcases:
+        container = region(line = container_line);
+        newregion = region(line = newregion_line);
+        answer = container.contains(newregion);
+        if answer != contains:
+            nerrs = nerrs + 1;
+            print(f"ERROR: contains test, expected" \
+                  f" {container}.contains({newregion}) {contains}," \
+                  f" got {answer}");
+
+
+    intersects_testcases = [
+        ('on x=10..12,y=10..12,z=10..12',
+         'on x=10..12,y=10..12,z=10..12',
+         ['on x=10..12,y=10..12,z=10..12',], []),
+        ('on x=10..12,y=10..12,z=10..12',
+         'on x=11..12,y=11..12,z=12..12',
+         ['on x=10..12,y=10..12,z=10..12',], []),
+    ];
+
+'on x = 10..10,y = 10..10,z = 10..11',
+'on  x = 10..10,y = 10..10,z = 12..12',
+'on  x = 10..10,y = 11..12,z = 10..11',
+'on  x = 10..10,y = 11..12,z = 12..12',
+'on  x = 11..12,y = 10..10,z = 10..11',
+'on  x = 11..12,y = 10..10,z = 12..12',
+'on  x = 11..12,y = 11..12,z = 10..11',
+'on  x = 11..12,y = 11..12,z = 12..12']
+
+    for r0_line, r1_line, selflist, otherlist in intersects_testcases:
+        r0 = region(line = r0_line);
+        r1 = region(line = r1_line);
+        selflist_answer, otherlist_answer = r0.get_intersections(r1);
+        if selflist_answer != selflist:
+            nerrs = nerrs+1;
+            print(f"ERROR: intersects test\n  {r0}\n  {r1}\n" \
+                    f"  selflist {selflist_answer}\n" \
+                    f"  expected {selflist}")
+        if otherlist_answer != otherlist:
+            nerrs = nerrs+1;
+            print(f"ERROR: intersects test\n  {r0}\n  {r1}\n" \
+                    f"  otherlist {otherlist_answer}\n" \
+                    f"  expected  {otherlist}")
+
+    test_problem_lines = [
+        ];
+    '''
+            (['on x=10..12,y=10..12,z=10..12'], 27),
+            (['on x=10..12,y=10..12,z=10..12',
+              'on x=11..13,y=11..13,z=11..13'], 46),
+            (['on x=10..12,y=10..12,z=10..12',
+              'on x=11..13,y=11..13,z=11..13',
+              'off x=9..11,y=9..11,z=9..11'], 38),
+        ];
+            (['on x=10..12,y=10..12,z=10..12',
+              'on x=11..13,y=11..13,z=11..13',
+              'off x=9..11,y=9..11,z=9..11',
+              'on x=10..10,y=10..10,z=10..10'], 39),
+        ];
+    '''
+
+    for nlines in range(len(test_problem_lines)):
+        lines, expected_n_cubes = test_problem_lines[nlines];
+        answer = get_n_cubes(lines, logger);
+        if(answer != expected_n_cubes):
+            print(f"ERROR: {nlines + 1} test lines, expected answer" \
+                    f" {answer}, received answer {expected_n_cubes}");
+            nerrs = nerrs + 1;
+
+    print(f"{nerrs} errors");
+    return nerrs;
+
 
 if('__main__' == __name__):
     import argparse;
@@ -123,48 +320,16 @@ if('__main__' == __name__):
     parser.add_argument(
         '-v', '--verbose', action='store_true',
         help='be verbose', default=False);
+    parser.add_argument(
+        '-T', '--test', action='store_true',
+        help='run unit test', default=False);
 
     args = parser.parse_args();
     if(args.verbose):
         logger.setLevel(logging.DEBUG);
 
-    regionlist = [];
-    line = sys.stdin.readline();
-    while(line):
-        # read new region
-        newregions = [region(line = line)];
-        logger.debug("adding new region {}".format(newregions[0]));
+    if(args.test):
+        sys.exit(test(logger));
 
-        # compute intersection with all other regions and add to list
+    print(f"Found {get_n_cubes(sys.stdin.readlines(), logger)} cubes");
 
-        new_regionlist = [];
-        for r in regionlist:
-            print("-- intersecting new with region {}".format(r));
-            new_newregions = [];
-            intersected = False;
-            print(" -- newregions length {}".format(len(newregions)));
-            for newr in newregions:
-                #print("-- adding new {}".format(newr));
-                if(r.intersects(newr)):
-                    new_newregions.extend(newr.get_intersections(r));
-                    intersected = True;
-                else:
-                    new_newregions.append(newr);
-
-            newregions = new_newregions;
-            if not intersected:
-                new_regionlist.append(r);
-
-        regionlist = new_regionlist;
-        regionlist.extend(newregions);
-        logger.debug("-- current region list {}".format(
-            '\n'.join([str(r) for r in regionlist])));
-
-        line = sys.stdin.readline();
-
-    logger.debug("final region list\n  {}".format('\n  '.join([str(r) for r in regionlist])));
-    turned_on = 0;
-    for r in regionlist:
-        turned_on += r.size();
-
-    print("{} cubes turned on.".format(turned_on));

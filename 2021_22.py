@@ -34,22 +34,23 @@ class region():
             self.y1 += 1;
             self.z1 += 1;
 
-    def unions(self, other):
+    def intersects(self, other):
         ''' one line segment x0,x1, other.x0, other.x1 if:
-             x0 <= other.x0 <= x1 OR
-             x0 <= other.x1 <= x1 OR
-             other.x0 < x0 and x1 < other.x1
+             x0 <= other.x0 < x1 OR
+             x0 < other.x1 <= x1 OR
+             other.x0 <= x0 and x1 <= other.x1
             to get a union in 3d, we need this for all axes.
         '''
-        return ((self.x0 <= other.x0 and other.x0 <= self.x1)
-                or (self.x0 <= other.x1 and other.x1 <= self.x1)
-                or (other.x0 < self.x0 and self.x1 < other.x1)) \
-           and ((self.y0 <= other.y0 and other.y0 <= self.y1)
-                or (self.y0 <= other.y1 and other.y1 <= self.y1)
-                or (other.y0 < self.y0 and self.y1 < other.y1)) \
-           and ((self.z0 <= other.z0 and other.z0 <= self.z1)
-                or (self.z0 <= other.z1 and other.z1 <= self.z1)
-                or (other.z0 < self.z0 and self.z1 < other.z1));
+        return ((self.x0 <= other.x0 and other.x0 < self.x1)
+                or (self.x0 < other.x1 and other.x1 <= self.x1) \
+                or (other.x0 <= self.x0 and self.x1 <= other.x1)) \
+               and ((self.y0 <= other.y0 and other.y0 < self.y1) \
+                or (self.y0 < other.y1 and other.y1 <= self.y1) \
+                or (other.y0 <= self.y0 and self.y1 <= other.y1)) \
+               and ((self.z0 <= other.z0 and other.z0 < self.z1) \
+                or (self.z0 < other.z1 and other.z1 <= self.z1) \
+                or (other.z0 <= self.z0 and self.z1 <= other.z1));
+
 
     def contains(self, other):
         return ((self.x0 <= other.x0)
@@ -64,7 +65,9 @@ class region():
         other_retval = [];
         self.logger.debug("get_unions({}, {})".format(
             str(self), str(other)));
-        # assume this region unions with the other
+        if not self.intersects(other):
+            self.logger.debug("  no intersections");
+            return (self, other);
         # assume this region is the newer region, other is the older
         #  collect all points and sort
         #  tuple is: value, on/off to the right, on/off to the left, newer
@@ -86,6 +89,7 @@ class region():
                                         z0 = zs[zindex - 1], z1 = zs[zindex]);
                                 logger.debug(f"   get_unions processing {r}");
                                 if(self.contains(r)):
+                                    logger.debug(f"    {r} in self");
                                     # note that we return the yet-ununioned
                                     # parts of off regions too, so they can
                                     # continue to be processed (in case they
@@ -108,7 +112,6 @@ class region():
     def size(self):
         if not self.on:
             return 0;
-        print("{}-{} x {}-{} x {}-{} = {} * {} * {} = {}".format(self.x0, self.x1, self.y0, self.y1, self.z0, self.z1, self.x1 - self.x0,self.y1 - self.y0, self.z1 - self.z0, (self.x1 - self.x0) * (self.y1 - self.y0) * (self.z1 - self.z0)));
         return (self.x1 - self.x0) * (self.y1 - self.y0) * (self.z1 - self.z0);
 
     def get_cubes(self):
@@ -128,8 +131,8 @@ class region():
         return retval;
 
 def get_n_cubes(lines, logger):
-    print("lines:")
-    print(lines);
+    logger.debug("get_n_cubes lines:")
+    logger.debug(lines);
     regionlist = [region(lines[0])];
     for line in lines[1:]:
         # read new region
@@ -152,7 +155,7 @@ def get_n_cubes(lines, logger):
             while len(newregions) > 0:
                 newr = newregions.pop();
                 logger.debug("    adding new {}".format(newr));
-                if(newr.unions(r)):
+                if(newr.intersects(r)):
                     newsplit, rsplit = newr.get_unions(r);
                     unioned = True;
                     new_newregions.extend(newsplit);

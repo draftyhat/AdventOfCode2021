@@ -53,6 +53,20 @@ class region():
 
 
     def contains(self, other):
+        #if not ((self.x0 <= other.x0)
+        #        and (other.x1 <= self.x1)
+        #        and (self.y0 <= other.y0)
+        #        and (other.y1 <= self.y1)
+        #        and (self.z0 <= other.z0)
+        #        and (other.z1 <= self.z1)):
+        #    print(f"{self} doesn't contain {other}: "\
+        #            f"x0 {self.x0 <= other.x0} " \
+        #            f"x1 {other.x1 <= self.x1} " \
+        #            f"y0 {self.y0 <= other.y0} " \
+        #            f"y1 {other.y1 <= self.y1} " \
+        #            f"z0 {self.z0 <= other.z0} " \
+        #            f"z1 {other.z1 <= self.z1}");
+
         return ((self.x0 <= other.x0)
                 and (other.x1 <= self.x1)
                 and (self.y0 <= other.y0)
@@ -69,6 +83,15 @@ class region():
             self.logger.debug("  no intersections");
             return (self, other);
         # assume this region is the newer region, other is the older
+
+        # if they are the same on/off, and one contains the other, keep the
+        # bigger one only
+        if(self.on == other.on):
+            if(self.contains(other)):
+                return ([self], []);
+            if(other.contains(self)):
+                return ([], [other]);
+
         #  collect all points and sort
         #  tuple is: value, on/off to the right, on/off to the left, newer
         xs = [self.x0, self.x1, other.x0, other.x1];
@@ -107,6 +130,11 @@ class region():
                 '\n  '.join([str(x) for x in self_retval]));
         logger.debug(f"get_unions return other\n  " + \
                 '\n  '.join([str(x) for x in other_retval]));
+
+        # if other is off, don't subdivide the region
+        if not other.on:
+            other_retval = [other];
+
         return self_retval, other_retval;
 
     def size(self):
@@ -130,13 +158,24 @@ class region():
                 f',z={self.z0}..{self.z1 - 1}';
         return retval;
 
-def get_n_cubes(lines, logger):
+def get_n_cubes(lines, logger, part2 = False):
     logger.debug("get_n_cubes lines:")
     logger.debug(lines);
     regionlist = [region(lines[0])];
+
+    # check for region outside part1 region
+    if not part2:
+        part1_region = region(x0=-50, x1=51, y0=-50, y1=51, z0=-50, z1=51);
+        if not part1_region.contains(regionlist[0]):
+            raise Exception('Region 1 {regionlist[0]} outside boundary');
+
     for line in lines[1:]:
         # read new region
         read_region = region(line = line);
+        if not part2 and not part1_region.contains(read_region):
+            print(f"Region {read_region} discarded, out of bounds");
+            continue;
+
         newregions = [read_region];
         logger.debug("adding new region {}".format(read_region));
 
@@ -171,20 +210,20 @@ def get_n_cubes(lines, logger):
         regionlist.extend(newregions);
         logger.debug("-- current region list {}".format(
             '\n'.join([str(r) for r in regionlist])));
-        for r in regionlist:
-            logger.debug(f'*** {r}\n  ' + '\n  '.join([str(c) for c in r.get_cubes()]));
+        #for r in regionlist:
+        #    logger.debug(f'*** {r}\n  ' + '\n  '.join([str(c) for c in r.get_cubes()]));
 
     logger.debug("final region list\n  {}".format('\n  '.join([str(r) for r in regionlist])));
     turned_on = 0;
-    cubes = [];
+    #cubes = [];
     for r in regionlist:
         turned_on += r.size();
-        cubes.extend(r.get_cubes());
+    #    cubes.extend(r.get_cubes());
 
     print("{} cubes turned on.".format(turned_on));
-    print(f"{len(cubes)} distinct cubes");
-    cubes.sort(key=lambda x:x[0] * 10000 + x[1] * 100 + x[2]);
-    print('\n'.join([str(x) for x in cubes]));
+    #print(f"{len(cubes)} distinct cubes");
+    #cubes.sort(key=lambda x:x[0] * 10000 + x[1] * 100 + x[2]);
+    #print('\n'.join([str(x) for x in cubes]));
 
     return turned_on;
 
@@ -373,5 +412,5 @@ if('__main__' == __name__):
     if(args.test):
         sys.exit(test(logger));
 
-    print(f"Found {get_n_cubes(sys.stdin.readlines(), logger)} cubes");
+    print(f"Found {get_n_cubes(sys.stdin.readlines(), logger, part2=args.part2)} cubes");
 

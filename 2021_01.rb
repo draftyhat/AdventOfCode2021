@@ -1,35 +1,65 @@
+AOCDAY = 1
+AOCYEAR = 2021
 
-increases=0;
-last_depth = gets.to_i
-depthlist = [last_depth]
-while depthlist.length < 3 and line = gets
-  next_depth = line.to_i
-  if(next_depth > last_depth)
-    puts("  increase!");
-    increases += 1
+def run(inputfile, **kwargs)
+  previous_depth,*rest_depths = File.readlines(inputfile).map(&:to_i);
+
+  count = 0;
+  rest_depths.each do |next_depth|
+    count += (next_depth > previous_depth ? 1 : 0)
+    previous_depth = next_depth;
   end
-  last_depth = next_depth;
-  depthlist.push(next_depth);
-  puts(depthlist);
+
+  puts("#{count} increases");
 end
 
-average_increases = 0;
-while line = gets
-  next_depth = line.to_i
-  if(next_depth > last_depth)
-    increases += 1
+def run_part2(inputfile, **kwargs)
+  depths = File.readlines(inputfile).map(&:to_i);
+
+  # note that window[a] < window[a+1]? is equivalent to
+  #   window[a][0] < window[a+1][-1]
+
+  puts kwargs
+  window_size = kwargs.include?(:part2) ? 3 : 1
+  puts window_size
+  previous_depths = depths[0...window_size]
+  rest_depths = depths[window_size..-1]
+
+  count = 0;
+  rest_depths.each do |next_depth|
+    count += (next_depth > previous_depths[0] ? 1 : 0)
+    previous_depths.shift
+    previous_depths << next_depth;
   end
 
-  first_depthlist = depthlist.shift
-  puts("-- #{first_depthlist} -> #{next_depth}")
-  #if(next_depth > depthlist.shift)
-  if(next_depth > first_depthlist)
-    average_increases += 1;
-  end
-  last_depth = next_depth;
-  depthlist.push(next_depth);
+  puts("#{count} increases");
 end
 
-puts("Increases: #{increases}")
-puts("Average increases: #{average_increases}")
 
+if __FILE__ == $0
+  require 'optparse'
+
+  options = {}
+  OptionParser.new do |opts|
+    opts.banner = "Usage: $0 [options] <inputfile> [<more inputfiles>]\n" \
+      "  Advent of Code #{AOCYEAR} day #{AOCDAY}"
+
+    opts.on("-v", "--verbose", "Be verbose") do |v|
+      options[:verbose] = v
+    end
+
+    opts.on("-2", "--part2", "Run part 2") do |part2|
+      options[:part2] = true
+    end
+
+    opts.on("-h", "--help", "Print this help message") do
+      puts opts
+      exit
+    end
+  end.parse!
+
+
+  ARGV.each do |inputfile|
+    run_part2(inputfile, **options)
+  end
+end

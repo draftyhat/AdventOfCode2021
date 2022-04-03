@@ -150,7 +150,7 @@ if __FILE__ == $0
   end.parse!
 
   logger = Logger.new(STDOUT);
-  logger.level = ((options.include? :verbose) ? Logger::WARN : Logger::INFO)
+  logger.level = ((options.include? :verbose) ? Logger::DEBUG : Logger::WARN)
 
   ARGV.each do |inputfile|
     run(inputfile, logger, **options)

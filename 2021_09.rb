@@ -6,17 +6,17 @@ AOCYEAR = 2021
 
 def run(inputfile, logger, **kwargs)
   # read in grid
-  g = Grid.new(File.open(inputfile), single_character: true)
+  grid = Grid.new(File.open(inputfile), single_character: true)
 
   sumlowpoints = 0
-  (0...g.width).each do |x|
-    (0...g.height).each do |y|
+  (0...grid.width).each do |x|
+    (0...grid.height).each do |y|
       logger.debug("traversing (#{x},#{y})");
-      left = g.get(x-1, y, default: 10);
-      right = g.get(x+1, y, default: 10);
-      up = g.get(x, y+1, default: 10);
-      down = g.get(x, y-1, default: 10);
-      val = g.get(x,y);
+      left = grid.get(x-1, y, default: 10);
+      right = grid.get(x+1, y, default: 10);
+      up = grid.get(x, y+1, default: 10);
+      down = grid.get(x, y-1, default: 10);
+      val = grid.get(x,y);
 
       if (val < left) && (val < right) && (val < up) && (val < down)
         logger.debug("Found low point #{val} at #{x},#{y}");
@@ -27,6 +27,63 @@ def run(inputfile, logger, **kwargs)
 
   puts("Found low points sum #{sumlowpoints}")
 end
+
+def process_basin(grid, x, y)
+  # process the basin starting at x,y in grid grid
+  #   set all elements to 10
+  #   return basin size
+  pointstack = [[x,y]]
+  basinsize = 0;
+
+  nextpoint = pointstack.pop()
+  while not nextpoint.nil?
+    x,y = nextpoint
+    begin
+      val = grid.get(x, y, default: 10)
+      # is this element part of the basin?
+      if val < 9
+        # mark this point as part of the basin
+        grid.set(x, y, 10)
+        basinsize += 1
+
+        # check points around this point next
+        pointstack.push([x-1, y])
+        pointstack.push([x+1, y])
+        pointstack.push([x, y-1])
+        pointstack.push([x, y+1])
+      end
+    rescue GridBoundaryError => err
+    end
+    nextpoint = pointstack.pop()
+  end
+
+  # return the basin size
+  basinsize
+end
+
+def run_part2(inputfile, logger, **kwargs)
+  # read in grid
+  grid = Grid.new(File.open(inputfile), single_character: true)
+
+  basinsizes = []
+  # find next basin
+  (0...grid.width).each do |x|
+    (0...grid.height).each do |y|
+      val = grid.get(x, y, default:10)
+      if val < 9
+        # this is a new basin. Calculate size
+        basinsizes << process_basin(grid, x, y)
+      end
+    end
+  end
+
+  # multiply sizes of three largest basins
+  answer = basinsizes.sort().reverse[0..2].inject(1) {|ret, x| x*ret}
+  puts("Part 2 answer #{answer}");
+
+  answer
+end
+
 
 
 if __FILE__ == $0
@@ -56,5 +113,6 @@ if __FILE__ == $0
 
   ARGV.each do |inputfile|
     run(inputfile, logger, **options)
+    run_part2(inputfile, logger, **options)
   end
 end

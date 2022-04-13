@@ -3,6 +3,17 @@ require 'logger'
 AOCDAY = 12
 AOCYEAR = 2021
 
+def path_valid_part2(path)
+  # check that a path visits only one small cave more than once
+  pathtally = path.tally
+  # delete all big rooms
+  pathtally = pathtally.delete_if {|k, v| not k.small }
+  # delete all rooms we've visited less than twice
+  pathtally = pathtally.delete_if {|k, v| v < 2}
+
+  return pathtally.length < 2
+end
+
 class Cave
   attr_accessor :name
   attr_accessor :small
@@ -48,7 +59,10 @@ class Cave
         #   small caves can't be visited more than once
         nextcaves_in_path =  path.select {|x| x.name == nextcave.name }
         if nextcaves_in_path.length < small_cave_visits_allowed
-          npaths += nextcave.get_n_paths(path.clone() + [nextcave], part2: part2);
+          newpath = path.clone() + [nextcave]
+          if (not part2) or path_valid_part2(newpath)
+            npaths += nextcave.get_n_paths(path.clone() + [nextcave], part2: part2);
+          end
         end
       else
         #   large cave. Do it.

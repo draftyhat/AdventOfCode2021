@@ -6,7 +6,7 @@ AOCYEAR = 2021
 
 def run(inputfile, logger, **kwargs)
   # read in grid
-  grid = Grid.new(File.open(inputfile), single_character: true)
+  grid = Grid.new(fh: File.open(inputfile), single_character: true)
 
   sumlowpoints = 0
   (0...grid.width).each do |x|
@@ -63,7 +63,7 @@ end
 
 def run_part2(inputfile, logger, **kwargs)
   # read in grid
-  grid = Grid.new(File.open(inputfile), single_character: true)
+  grid = Grid.new(fh: File.open(inputfile), single_character: true)
 
   basinsizes = []
   # find next basin

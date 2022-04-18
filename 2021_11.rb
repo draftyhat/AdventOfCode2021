@@ -58,7 +58,7 @@ end
 
 def run(inputfile, logger, **kwargs)
   # read grid
-  grid = Grid.new(File.open(inputfile), single_character: true)
+  grid = Grid.new(fh: File.open(inputfile), single_character: true)
 
   flashcount = 0;
   nsteps = 0;

@@ -40,6 +40,7 @@ class Grid
 
       # make 0,0 bottom left
       #@grid = local_grid.reverse;
+      #   well, most of the problems don't actually work this way
       @grid = local_grid
       
     else
@@ -58,6 +59,18 @@ class Grid
       retval += "\n"
     end
     return retval;
+  end
+
+  def to_s_subgrid(xmax: -1, ymax: -1)
+    xmax = xmax == -1 ? width() : xmax
+    ymax = ymax == -1 ? height() : ymax
+    # print a subgrid
+    retval = []
+    @grid[0...ymax].each do |row|
+      retval.append(row[0...xmax].join(@delimiter))
+    end
+
+    retval.join("\n");
   end
     
   def width()
@@ -112,5 +125,22 @@ class Grid
   def right(x,y)
     newx, newy = bordercheck(x+1, y)
     return [newx, newy, @grid[newy][newx]]
+  end
+
+  def _default_sum_method(x, y)
+    x + y
+  end
+
+  def sum_subgrid(xmax:-1,ymax:-1, p:_default_sum_method)
+    xmax = xmax == -1 ? width() : xmax
+    ymax = ymax == -1 ? height() : ymax
+
+    # sum a subgrid
+    retval = 0
+    @grid[0...ymax].each do |row|
+      retval += row[0...xmax].reduce(0) { |memo, x| memo = send(p, memo, x) }
+    end
+
+    retval
   end
 end

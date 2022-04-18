@@ -10,7 +10,7 @@ def run(inputfile, logger, **kwargs)
     x0,y0 = newvectors[0].split(',').map(&:to_i);
     x1,y1 = newvectors[1].split(',').map(&:to_i);
 
-    puts("#{x0},#{y0} -> #{x1},#{y1}");
+    logger.debug("#{x0},#{y0} -> #{x1},#{y1}");
 
     if not kwargs.include? :part2
       # skip diagonals

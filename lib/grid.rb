@@ -4,9 +4,9 @@ class GridBoundaryError < StandardError
 end
 
 class Grid
-  # a simple grid class
-  #  bottom left is 0,0 by default (so, Cartesian-ish); y increases the row
-  #  number, and x increases the column number
+  # a simple 2-d grid class
+
+  include Enumerable
 
   def initialize(fh: nil, delimiter: ' ', single_character: false,
                  width: 0, height: 0, default: 0,
@@ -110,12 +110,18 @@ class Grid
     @grid[y][x] = value;
   end
 
+  def each(&block)
+    @grid[0...@grid.length].each do |row|
+      @row.each(&block)
+    end
+  end
+
   def up(x, y)
-    newx, newy = bordercheck(x, y+1)
+    newx, newy = bordercheck(x, y-1)
     return [newx, newy, @grid[newy][newx]]
   end
   def down(x, y)
-    newx, newy = bordercheck(x, y-1)
+    newx, newy = bordercheck(x, y+1)
     return [newx, newy, @grid[newy][newx]]
   end
   def left(x,y)
@@ -131,7 +137,29 @@ class Grid
     x + y
   end
 
-  def sum_subgrid(xmax:-1,ymax:-1, p:_default_sum_method)
+  def resize!(newwidth, newheight, default: 0)
+    # extend or shrink the grid to the new dimensions. Initialize new spots
+    # with the value default.
+    (0...@grid.length).each do |rowindex|
+      if newwidth < width
+        @grid[rowindex] = @grid[rowindex][(0...newwidth)]
+      else
+        @grid[rowindex] = @grid[rowindex] + ([default] * (newwidth - width))
+      end
+    end
+
+    if newheight < height
+      @grid = @grid[(0...newheight)]
+    else
+      (height...newheight).each do |y|
+        @grid.append([default] * newwidth)
+      end
+    end
+    puts("grid[0] length #{@grid[0].length}");
+    puts("grid length #{@grid.length}");
+  end
+
+  def sum_subgrid(xmax:-1,ymax:-1, p: :_default_sum_method)
     xmax = xmax == -1 ? width() : xmax
     ymax = ymax == -1 ? height() : ymax
 

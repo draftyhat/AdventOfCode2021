@@ -32,7 +32,7 @@ class Node
       [ @x+1, @y ] ].each do |x, y|
       begin
         neighbornode = grid.get(x, y)
-        neighbornode.set_distance(@distance + @risk)
+        neighbornode.set_distance(@distance)
       rescue GridBoundaryError => err
       end
     end
@@ -60,9 +60,9 @@ class Node
   def set_distance(x)
     # set distance if it's lower than what we have now
     if @distance.nil?
-      @distance = x
+      @distance = x + @risk
     else
-      @distance = [@distance, x].min
+      @distance = [@distance, x + @risk].min
     end
   end
 
@@ -80,7 +80,19 @@ def run(inputfile, logger, **kwargs)
 
   # create part 2 grid, 5x5 tiling
   if kwargs.include? :part2
-    (0...5).each do |x|
+    width = grid.width;
+    height = grid.height;
+    grid.resize!(width * 5, height * 5, default: 0);
+    (0...width).each do |x|
+      (height...5*height).each do |y|
+        grid.set(x, y, (grid.get(x, y % height) + y.div(height) - 1) % 9 + 1)
+      end
+    end
+    (width...5*width).each do |x|
+      (0...5*height).each do |y|
+        grid.set(x, y, (grid.get(x % width, y % height) + x.div(width) + y.div(height) - 1) % 9 + 1)
+      end
+    end
   end
 
   # Djikstra
@@ -100,7 +112,7 @@ def run(inputfile, logger, **kwargs)
 
   # start by visiting (0,0)
   nextnode = unvisited.shift
-  nextnode.distance = nextnode.risk;
+  nextnode.distance = 0;
   nextnode.visit(grid)
 
   # on each iteration, visit the unvisited node with the smallest distance
@@ -119,8 +131,15 @@ def run(inputfile, logger, **kwargs)
     end
 
     step += 1
-    if step % 1000
+    if step % 1000 == 0
       logger.debug("at step #{step}, #{unvisited.length} nodes left");
+    end
+  end
+
+  # print out the final grid
+  (0...grid.width).each do |x|
+    (0...grid.height).each do |y|
+      puts("(#{x},#{y}): #{grid.get(x,y)}");
     end
   end
 

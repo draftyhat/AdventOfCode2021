@@ -88,7 +88,7 @@ def test_riskgrid(logger):
 
 def read_riskgrid(part2 = False):
     weights = [[x for x in line.strip()] for line in sys.stdin.readlines()];
-    grid = [[riskgrid_element(weights[x][y], (y,x)) for x in range(len(weights[0]))] for y in range(len(weights))]
+    grid = [[riskgrid_element(weights[x][y], (y,x)) for x in range(len(weights))] for y in range(len(weights[0]))]
 
     if part2:
         # expand grid
@@ -122,8 +122,8 @@ def djikstra(grid, logger):
     # priority queue
     # start with only the start element in the priority queue
     q = [grid[0][0]];
-    width = len(grid[0]);
-    height = len(grid);
+    width = len(grid);
+    height = len(grid[0]);
 
     end_coords = (len(grid) - 1, len(grid[0]) - 1)
     # pop element with lowest distance

@@ -1,3 +1,5 @@
+# this should be correct but it will take forever to complete. Need a sorted
+# insert!
 require 'logger'
 require 'set'
 require_relative 'lib/grid'

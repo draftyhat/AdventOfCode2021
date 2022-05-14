@@ -1,3 +1,4 @@
+require "rspec/autorun"
 require_relative "../lib/grid"
 require "stringio"
 

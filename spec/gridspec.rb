@@ -124,6 +124,24 @@ describe Grid do
       expect(grid.height).to eq 6
       expect(grid.get(5,5)).to eq 9
     end
+
+    it "Checking grid translation" do
+      rawgrid = StringIO.new("abcde\nbcdef\ncdefg\ndefgh\nefgh8")
+      grid = Grid.new(fh: rawgrid, single_character: true,
+                     translation_pattern: /[abcdefgh]/,
+                     translation_map: { 'a'=>0,'b'=>1,'c'=>2,'d'=>3,'e'=>4,'f'=>5,'g'=>6,'h'=>7})
+      puts(grid)
+      expect(grid.get(0,0)).to eq 0
+      expect(grid.get(1,0)).to eq 1
+      expect(grid.get(0,1)).to eq 1
+      expect(grid.get(1,1)).to eq 2
+      expect(grid.get(4,0)).to eq 4
+      expect(grid.get(4,3)).to eq 7
+      expect(grid.get(4,4)).to eq 8
+      expect(grid.sum_subgrid).to eq 100
+      expect(grid.sum_subgrid(xmax:2,ymax:2)).to eq 4
+      expect(grid.sum_subgrid).to eq 100
+    end
   end
 end
 

@@ -9,6 +9,7 @@ class Grid
   include Enumerable
 
   def initialize(fh: nil, delimiter: ' ', single_character: false,
+                 translation_pattern: nil, translation_map: nil,
                  width: 0, height: 0, default: 0,
                  wrap: false, infiniteborder: false)
     # initialize from file read:
@@ -30,6 +31,13 @@ class Grid
 
     if not fh.nil?
       fh.readlines.each do |line|
+        nextline = line.strip
+        if not translation_pattern.nil?
+          puts("Translating line to #{line}");
+          line.gsub!(translation_pattern, translation_map)
+          puts("Translated line to  #{line}");
+        end
+        line.split(@delimiter).map(&:to_i)
         nextline = line.strip.split(@delimiter).map(&:to_i)
         if nextline.length > 0
           local_grid << nextline

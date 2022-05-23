@@ -125,12 +125,59 @@ describe Grid do
       expect(grid.get(5,5)).to eq 9
     end
 
+    it "Checking grid subgrid with recenter" do
+      rawgrid = StringIO.new("01234\n12345\n23456\n34567\n45678")
+      grid = Grid.new(fh: rawgrid, single_character: true)
+      grid.resize!(3, 3, newx0:1, newy0:1, default: 9)
+      expect(grid.get(0,0)).to eq 9
+      expect(grid.get(0,1)).to eq 9
+      expect(grid.get(1,0)).to eq 9
+      expect(grid.get(1,1)).to eq 0
+      expect(grid.get(2,2)).to eq 2
+    end
+
+    it "Checking rectangular subgrid" do
+      rawgrid = StringIO.new("01234\n12345\n23456\n34567")
+      grid = Grid.new(fh: rawgrid, single_character: true)
+      grid.resize!(8, 6, newx0:1, newy0:1, default: 9)
+      expect(grid.get(0,0)).to eq 9
+      expect(grid.get(0,1)).to eq 9
+      expect(grid.get(1,0)).to eq 9
+      expect(grid.get(1,1)).to eq 0
+      expect(grid.get(2,2)).to eq 2
+      expect(grid.get(1,4)).to eq 3
+      expect(grid.get(1,5)).to eq 9
+      expect(grid.get(1,6,default:11)).to eq 11
+      expect(grid.get(5,1)).to eq 4
+      expect(grid.get(6,1)).to eq 9
+      expect(grid.get(7,1)).to eq 9
+      expect(grid.get(8,1,default:11)).to eq 11
+    end
+
+    it "Checking rectangular subgrid" do
+      rawgrid = StringIO.new("01234\n12345\n23456\n34567")
+      grid = Grid.new(fh: rawgrid, single_character: true)
+      grid.resize!(6, 8, newx0:1, newy0:1, default: 9)
+      expect(grid.get(0,0)).to eq 9
+      expect(grid.get(0,1)).to eq 9
+      expect(grid.get(1,0)).to eq 9
+      expect(grid.get(1,1)).to eq 0
+      expect(grid.get(2,2)).to eq 2
+      expect(grid.get(4,1)).to eq 3
+      expect(grid.get(5,1)).to eq 4
+      expect(grid.get(6,1,default:11)).to eq 11
+      expect(grid.get(1,4)).to eq 3
+      expect(grid.get(1,5)).to eq 9
+      expect(grid.get(1,6)).to eq 9
+      expect(grid.get(1,7)).to eq 9
+      expect(grid.get(1,8,default:11)).to eq 11
+    end
+
     it "Checking grid translation" do
       rawgrid = StringIO.new("abcde\nbcdef\ncdefg\ndefgh\nefgh8")
       grid = Grid.new(fh: rawgrid, single_character: true,
                      translation_pattern: /[abcdefgh]/,
                      translation_map: { 'a'=>0,'b'=>1,'c'=>2,'d'=>3,'e'=>4,'f'=>5,'g'=>6,'h'=>7})
-      puts(grid)
       expect(grid.get(0,0)).to eq 0
       expect(grid.get(1,0)).to eq 1
       expect(grid.get(0,1)).to eq 1

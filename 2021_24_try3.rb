@@ -33,7 +33,20 @@ notes
 
   try 2, work from the end
 
-  try 3, work forward. Go 
+  try 3, do more extensive analysis
+    the 14 sections differ in 3 constants A, B, C, where A is always either 1 or 26
+    if A is 1, in my input, B is always greater than 10
+      this means that x is always 1 (because z % 26 + B > 10, so can never ==
+        the input digit, which is 1-9)
+      so if A is 1, z <- 26z + w + C
+      this means z gets multiplied by 26 in every A=1 step. C,w are always
+        positive, so these steps always increase z.
+    if A is 26, and if x is 1, z <- z+w+c. So z increases in this case too.
+      Gonna be hard to get back to 0 if z is always increasing!
+      So we require x to be 0. This is true when (z % 26) + B == w. So we can
+        calculate a legal value for w in this case.
+  This is enough to winnow the brute force calculation to something reasonable!
+  Off we go!
 
 =end
 
@@ -74,7 +87,7 @@ def run(logger, **kwargs)
     if a == 1
       # input is unrestricted. Try them all.
       # output == 26z + w + C
-      (0..9).each do |newinput|
+      (1..9).each do |newinput|
         zs.each do |z, input|
           newzs.append([26 * z + newinput + c, input * 10 + newinput])
         end
